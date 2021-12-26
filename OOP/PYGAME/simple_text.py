@@ -8,13 +8,14 @@ class SimpleText:
         # porque ya el sistema está en marcha...
         # quizás se podría mejorar poniéndolo fuera???
         # Pero como es una clase tiene que asegurarse... el código tiene que estar OK en sí mismo
+        self.text_surface = None
         pygame.font.init()
         self.window = window
         self.location = location
         self.font = pygame.font.SysFont(None, 30)  # utilizamos la fuente estándar del sistema!!!
         self.color = color
-        self.text = None   # lo crearemos luego en setvalue...
-        self.set_text(string)
+        self.text = "Prueba"   # lo crearemos luego en setvalue...
+        self.set_text(texto)
 
     def set_text(self, texto):
         # No sólo asigna el valor, sino que crea el objeto tipo superficie...!!!
@@ -26,4 +27,4 @@ class SimpleText:
         self.text_surface = self.font.render(self.text, True, self.color)
 
     def draw(self):
-        self.text_surface.blit(self.window, self.location)
+        self.window.blit(self.text_surface, self.location)

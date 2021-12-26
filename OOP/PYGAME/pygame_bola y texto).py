@@ -22,6 +22,7 @@ from pygame.locals import *   # importa constantes...
 # 2 definimos constantes....
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
+GRAY = (128, 128, 128)
 WINDOW_WIDTH = 800
 WINDOW_HEIGHT = 600
 WINDOW_SIZE = (WINDOW_WIDTH, WINDOW_HEIGHT)  # tupla
@@ -75,8 +76,11 @@ while True:
         if event.type == pygame.QUIT:
             pygame.quit()   # borra y libera las estructuras....
             sys.exit()  # se termina el programa
-        elif event.type == pygame.KEYDOWN and event.key== pygame.K_q:
+        elif event.type == pygame.KEYDOWN and event.key == pygame.K_q:
             sys.exit()
+
+        if restart_button.handle_events(event):
+            frame_counter = 0
 
 
     # 8 acciones a realizar en cada "frame"...
@@ -88,15 +92,20 @@ while True:
     # ball_rect.x += xSpeed
     # ball_rect.y += ySpeed
     aBall.move()
+    frame_counter += 1
+    simple_text_fc_value.set_text(str(frame_counter))
 
     # 9 borramos la ventana, antes de volver a redibujar nada...
     # realmente habría q  dibujar el fondo, antes de volver a dibujar los elementos
-    window.fill(BLACK)
+    window.fill(GRAY)
 
 
     # 10 volvemos a "dibujar en la ventana (memoria)" de nuevo los elementos...
     # window.blit(ballImage, ball_rect)    # damos las coordenadas de la esquina superior izquierda...
     aBall.draw()
+    restart_button.draw()
+    simple_text_fc_label.draw()
+    simple_text_fc_value.draw()
 
     # 11 mostramos la pantalla  (AHORA ES CUANDO SE MUESTRA REALMENTE LO QUE ESTÁ GRABADO EN LA VENTANA
     # Obs. que no le indicamos a pygame la ventana, él ya sabe las que ha creado y las muestra
