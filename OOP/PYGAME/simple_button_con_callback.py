@@ -45,8 +45,6 @@ class SimpleButton:
                 self.estado = SimpleButton.STATE_IDLE
                 if self.function_if_clic:
                     self.function_if_clic()
-                else:
-                    print("Botón genérico clicado")
                 return True  # clicked!
 
             if (event.type == MOUSEMOTION) and (not colision):

@@ -15,7 +15,7 @@ FRAMES_PER_SECOND = 30
 
 # Funciones y métodos para callbacks....
 def clic_b():
-    print("Hemos clicado B")
+    print("Hemos clicado B, utilizamos para la gestión una función callback")
 
 
 class CallBackTest():
@@ -47,7 +47,9 @@ while True:
             pygame.quit()
             sys.exit()
         # lo que pasa al hacer clic depende de la función callback asociada!!!
-        button_A.handle_events(event)
+        # el botón A, como no tiene callback... nosotros debemos gestionar lo que hace...
+        if button_A.handle_events(event):
+            print("hemos clicado el botón A, la gestión realizada en el programa sin callback")
         button_B.handle_events(event)
         button_C.handle_events(event)
 
