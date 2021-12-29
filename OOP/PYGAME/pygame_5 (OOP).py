@@ -20,14 +20,14 @@ from pygame.locals import *   # importa constantes...
 
 # 2 definimos constantes....
 BLACK = (0, 0, 0)
-WINDOW_WIDTH = 800
-WINDOW_HEIGHT = 600
+WINDOW_WIDTH = 1200
+WINDOW_HEIGHT = 800
 WINDOW_SIZE = (WINDOW_WIDTH, WINDOW_HEIGHT)  # tupla
 FRAMES_PER_SECOND = 30  # es el límite máximo al que correrá, limitado por un reloj....
 # cosas de la bola....
 # BALL_WIDTH_HEIGHT = 100 # al ser la imagen cuadrada, es realmente el tamaño de la imagen...
 # N_PIXELS_PER_FRAME = 3
-N_BALLS = 50  # ¡jugaremos ahora con 3 bolas!!!
+N_BALLS = 10  # ¡jugaremos ahora con 3 bolas!!!
 
 # 3 iniciamos el entorno de pygame
 pygame.init()   # inicializamos las estructuras
