@@ -7,7 +7,7 @@ import pygwidgets
 from square import *
 from circle import *
 from triangle import *
-from rectangle import *
+from rectangle import Rectangle
 
 # 2 Set up the constants
 WHITE = (255, 255, 255)
