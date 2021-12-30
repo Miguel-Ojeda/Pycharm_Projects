@@ -12,3 +12,5 @@ texto = sg.popup_get_text('Escribe algo...')
 sg.popup('El texto elegido es', texto)
 folder = sg.popup_get_folder('Elige una carpeta...', no_titlebar=True)
 sg.popup('La carpeta elegida es:', folder)
+
+# sg.main()
