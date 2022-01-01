@@ -29,7 +29,7 @@ status_display = pygwidgets.DisplayText(window, (180, USABLE_WINDOW_HEIGHT + 25)
 start_button = pygwidgets.TextButton(window, (WINDOW_WIDTH - 110, USABLE_WINDOW_HEIGHT + 10), 'Start')
 
 # 5 - Initialize variables
-balloon_manager = Balloon_Manager(window)
+balloon_manager = Balloon_Manager(window, WINDOW_WIDTH, USABLE_WINDOW_HEIGHT)
 playing = False  # wait until user clicks Start
 
 # 6 - Loop forever: estos programas, están dirigidos por eventos.. básicamente es un bucle infinito
