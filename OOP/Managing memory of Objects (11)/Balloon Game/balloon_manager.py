@@ -11,6 +11,7 @@ class Balloon_Manager:
         self.window = window
         self.max_width = max_width
         self.max_height = max_height
+        print(self.__dict__)
 
     def start(self):
         self.balloon_list = []
@@ -19,8 +20,8 @@ class Balloon_Manager:
         self.score = 0
 
         for balloon_number in range(N_BALLOONS):
-            # Random_Balloon_Class = random.choice(Balloon_Small, Balloon_Medium, Balloon_Large)
-            clase_de_globo = Balloon_Medium
+            clase_de_globo = random.choice((Balloon_Small, Balloon_Medium, Balloon_Large))
+            # clase_de_globo = Balloon_Medium
             globo = clase_de_globo(self.window, self.max_width, self.max_height, balloon_number)
             self.balloon_list.append(globo)
 
@@ -30,11 +31,11 @@ class Balloon_Manager:
             for globo in reversed(self.balloon_list):
                 was_hit, n_points = globo.clicked_inside(event.pos)
                 if was_hit:
-                    if n_points > 0:  # remove this balloon ¿¿Por qué hay que comprobar los puntos???
-                        self.balloon_list.remove(globo)
-                        self.count_popped += 1
-                        self.score += n_points
-                return  # no need to check others
+                    # if n_points > 0:  # remove this balloon ¿¿Por qué hay que comprobar los puntos???
+                    self.balloon_list.remove(globo)
+                    self.count_popped += 1
+                    self.score += n_points
+                    return  # no need to check others
 
     def update(self):
         for globo in self.balloon_list:

@@ -23,18 +23,20 @@ class Balloon(ABC):
             Balloon.popsound_loaded = True
             Balloon.popsound = pygame.mixer.Sound('sounds/balloonPop.wav')
 
-        self.rect = self.balloon_image.getRect()
+        balloon_rect = self.balloon_image.getRect()
+        self.width = balloon_rect.width
+        self.height = balloon_rect.height
 
         # Position so balloon is within the width of the window,
         # but below the bottom
-        self.x = random.randrange(max_width - self.rect.width)
+        self.x = random.randrange(max_width - self.width)
         self.y = max_height + random.randrange(75)  # para que quede por debajo, y no se vea todavía....
-        # self.balloon_image.setLoc((self.x, self.y))
-        self.rect.x = self.x
-        self.rect.y = self.y
+        self.balloon_image.setLoc((self.x, self.y))
+
 
     def clicked_inside(self, mousePoint):
-        if self.rect.collidepoint(mousePoint):
+        rect = pygame.Rect(self.x, self.y, self.width, self.height)
+        if rect.collidepoint(mousePoint):
             Balloon.popsound.play()
             # True here means it was hit
             return True, self.n_points
@@ -44,10 +46,8 @@ class Balloon(ABC):
     def update(self):
         # update y position by speed
         self.y = self.y - self.speed_y
-        self.rect.y = self.y
-
-        # self.balloonImage.setLoc((self.x, self.y))
-        if self.y < -self.rect.height:  # off the top of the window
+        self.balloon_image.setLoc((self.x, self.y))
+        if self.y < -self.height:  # off the top of the window
             return BALLOON_MISSED
         else:
             return BALLOON_MOVING
