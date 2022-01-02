@@ -1,3 +1,4 @@
+# book of python tricks, capítulo de las funciones...
 import functools
 
 # a decorator is a callable that takes a callable as input and returns another callable.

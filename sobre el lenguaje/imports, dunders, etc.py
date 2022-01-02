@@ -1,3 +1,4 @@
+# book of python tricks, capítulo de las strings, dunders......
 # 1 sobre el leading underscore.... _xxxxx
 # es simplemente una forma de decir que el método o atributo es simplemente una
 # convención que indica que no se debería acceder a esa función o atributo
