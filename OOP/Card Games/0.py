@@ -28,6 +28,7 @@ while True:
     # 7: mirar eventos,
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
+            pygame.quit()
             sys.exit()
         elif event.type == pygame.MOUSEBUTTONDOWN and carta.clicked(event.pos):
             carta.flip()

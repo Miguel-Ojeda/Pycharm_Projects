@@ -52,6 +52,9 @@ class Card:
     def get_name(self):
         return self.card_name
 
+    def __str__(self):
+        return self.card_name
+    
     def get_value(self):
         return self.value
 
@@ -70,4 +73,3 @@ class Card:
 
     def draw(self):
         self.images.draw() # Invoca el método draw() de una pygwidgets.ImageCollection
-
