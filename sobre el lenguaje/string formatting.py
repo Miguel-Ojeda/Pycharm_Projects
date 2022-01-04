@@ -121,6 +121,15 @@ print(resultado)
 # pues usar el método 2, claro, con str.format().
 
 
+# RAW Strings (r-strings)
+# SOn cadenas que tiene desactivados backslash como scape character... se interprestan como un carácter más...
+# Ejemplo: cadena normal
+print('The file is in C:\\Users\\Al\\Desktop\\Info\\Archive\\Spam')
+# Resulta en The file is in C:\Users\Al\Desktop\Info\Archive\Spam
+# Ejemplo recomendado: usar para estos casos r-strings...
+print(r'The file is in C:\Users\Al\Desktop\Info\Archive\Spam')
+# El resultado es el mismo, pq en las r-strings el backslash ya no se interpreta como especial....
+
 
 
 

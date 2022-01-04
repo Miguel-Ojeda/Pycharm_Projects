@@ -18,7 +18,7 @@ f = open('hello.txt', 'w')
 f.write('hello, world')
 f.close()
 # es incompleta ya que, si por lo que fuera, ocurriera una excepción
-# durante f.write,() se quedaría abierto el fichero...
+# durante f.write,(), o antes de hacer el f.close...  se quedaría abierto el fichero...
 
 # Con el uso del with es más sencillo; asegura que, para los distintos recursos,
 # adquirir y liberarlos sea muy sencillo... tan sólo hay que programar el with
