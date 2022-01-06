@@ -7,8 +7,8 @@ from life import *
 from pygame.locals import *   # importa constantes...
 
 # 2 definimos constantes....
-WINDOW_WIDTH = 1200
-WINDOW_HEIGHT = 800
+WINDOW_WIDTH = 600
+WINDOW_HEIGHT = 600
 WINDOW_SIZE = (WINDOW_WIDTH, WINDOW_HEIGHT)  # tupla
 FRAMES_PER_SECOND = 1  # es el límite máximo al que correrá, limitado por un reloj....
 
@@ -21,7 +21,7 @@ clock = pygame.time.Clock()   # creamos un objeto de la clase Clock, nos va a se
 # 4 - Load assets: image(s), sound(s), etc.
 
 # 5 - Initialize variables
-automata = Automata(100, 100, setup=SETUP_RANDOM, window=window)
+automata = Automata(20, 20, setup=SETUP_RANDOM, window=window, world_type=WORLD_ROLLED)
 
 # 6 - Loop forever: estos programas, están dirigidos por eventos. Básicamente es un bucle infinito
 # dentro del bucle:
@@ -33,7 +33,7 @@ automata = Automata(100, 100, setup=SETUP_RANDOM, window=window)
 # 12 pausar el programa hasta que toque con el reloj...
 
 # Empezamos dibujando el autómata...
-# automata.crear_test_1(1, 1)
+# automata.crear_test_1(10, 10)
 # automata.crear_honey_farm(6, 10)
 # automata.crear_glider(1, 1)
 # automata.crear_mini_t_invertida(9, 10)
@@ -55,10 +55,10 @@ while True:
             automata.update()
             automata.display()
             # pygame.time.wait(500) # esperamos medio segundo
-            key_pressed = True
+            # key_pressed = True
         elif event.type == pygame.KEYUP:
             key_pressed = False
-        elif key_pressed == True:
+        elif key_pressed:
             automata.update()
             automata.display()
 
