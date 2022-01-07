@@ -23,6 +23,38 @@ print(mi_suma(2, 3, 4, 5, 6, 7, 8, 1, 9))
 # print(mi_suma(1, 2, 3, [4, 5, 6]))  DA ERROR!!! porque la función intenta sumar un número a una lista!!
 print(mi_suma(1, 2, 3, *[4, 5, 6])) # ESTO SÍ QUE FUNCIONA, lógicmanete, porque desempaqueta la lista....
 
+# Ahora definimos una función suma que suma lo que es numérico, lo otro lo ignora...
+def suma_items_numericos(*args):
+    suma = 0
+    for item in args:
+        if isinstance(item, (int, float, bool, complex)):
+            suma += item
+            continue
+
+        # Vamos ahora a intentar convertir los elementos no numéricos a int o float mejor...
+        # por ejemplo, si tenemos '4.2' tendríamos entonces 4.2 y lo podríamos sumar también!!!
+        try:
+            valor = float(item)
+            suma += valor
+        # Opción 0: mejor no usar en general pq es muy genérica...
+        # except:
+        #     pass
+        # Opción 1: es muy larga, teniendo en cuenta que vamos a hacer lo mismo en ambos errores...
+        # except ValueError:
+        #     pass
+        # except TypeError:
+        #     pass
+
+        # Mejor opción 2...
+        except (ValueError, TypeError) as error:
+            pass
+
+    return suma
+
+suma = suma_items_numericos('hola', 'que', 3, 4.2, True, False, [1, 2, 'hola'], True, complex(2,1))
+print(f'Valor de suma_items_numericos es {suma}')
+suma = suma_items_numericos('hola', 'que', '3', '4.2', '4', True, False, [1, 2, 'hola'])
+print(f'Valor de suma_items_numericos es {suma}')
 
 # Otro ejemplo:
 def mi_print(mensaje_inicial, *args):
