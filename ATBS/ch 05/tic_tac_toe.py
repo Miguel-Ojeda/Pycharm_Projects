@@ -1,5 +1,8 @@
 # Imports
 import random
+import logging
+logging.basicConfig(level=logging.DEBUG, format=' %(levelname)s - %(message)s')
+
 
 # CONSTANTES...
 import time
@@ -161,14 +164,54 @@ class Tic_Tac_Toe_Game:
     def play_ordenador(self):
         '''Queremos que tenga AI
         Criterios para mover serían...:
-        1. Si puede ganar, que mueva ahí
-        2. Si puede evitar que ganemos, pues que lo evite...
-        3. Elegir al azar con prioridad: centro, centro lados, esquinas'''
-        # De momento, simplemente elegimos una casilla al azar...
+        AI-1. Si puede ganar, que mueva ahí
+        AI-2. Si puede evitar que ganemos, pues que lo evite...
+        AI-3. Elegir al azar con prioridad: a) centro, b) esquinas, c) centro lados, '''
         print('Le toca mover al ordenador...')
         time.sleep(1.5)
         # Actualizamos el juego...
-        opcion_elegida = random.choice(self.empty_cells)
+        jugadas_ganadoras = self.get_winner_cells()
+        # Es un diccionario con la forma.... { CHAR_X: [casillas ganadoras para X], CHAR_O: [casillas ganadoras para O]}
+
+        # AI-1: Si existe jugada ganadora para el ordenador... hacerla!!!
+        if jugadas_ganadoras[self.computer_char]:
+            # si no es lista vacía la de ganadoras... elegimos una de las ganadoras al azar... por si hubiera varias..
+            # opcion_elegida = random.choice(jugadas_ganadoras[self.computer_char])
+            # bueno, realmente no aporta mucho elegir al azar, ya que va a ganar ya el ordenador
+            # O sea, que cogemos la primera...
+            opcion_elegida = jugadas_ganadoras[self.computer_char][0]
+            logging.info('EL ordenador ha encontrado una jugada ganadora...')
+        # AI-2 Si el jugador pueda ganar, el ordenador intenta bloquear la victoria...
+        elif jugadas_ganadoras[self.player_char]:
+            # Intentamos bloquear la primera de las ganadoras del jugador...
+            # Lógicamente, si tuviera más, pues nos va a ganar el jugador...
+            opcion_elegida = jugadas_ganadoras[self.player_char][0]
+            logging.info('EL ordenador ha encontrado una jugada defensiva...')
+
+        # AI3-a Si está libre el centro lo jugamos...
+        elif 4 in self.empty_cells:
+            opcion_elegida = 4
+            logging.info('Siempre está bien pillar el centro')
+
+        else:
+            # AI3-b
+            esquinas = [0, 2, 6, 8]
+            esquinas_disponibles = [item for item in esquinas if item in self.empty_cells]
+            # Si hay alguna esquina disponible, pues la elegimos al azar...
+            if esquinas_disponibles:
+                opcion_elegida = random.choice(esquinas_disponibles)
+                logging.info('Pillo una esquina...')
+
+            else:
+                # AI3-c
+                lados = [1, 3, 5, 7]
+                lados_disponibles = [item for item in lados if item in self.empty_cells]
+                # Evidentemente, quedan lados_disponibles, porque si no ya habría terminado la partida...
+                # No hace falta comprobarlo....
+                opcion_elegida = random.choice(lados_disponibles)
+                logging.info('Sólo me queda para coger la mitad de un lado... buff')
+
+        # opcion_elegida = random.choice(self.empty_cells)
         print(f'El ordenador ha elegido la casilla "{opcion_elegida}"')
         self.board[opcion_elegida] = self.computer_char
         self.empty_cells.remove(opcion_elegida)
@@ -191,6 +234,46 @@ class Tic_Tac_Toe_Game:
 
         # SI hemos llegado hasta aquí, es que no es jugada ganadora!!!
         return False
+
+    def get_winner_cells(self):
+        # Nos crea un diccionario, con una lista de jugadas ganadoras para el jugador
+        # y otra para el ordenador, analizando el board actual...
+        jugadas_ganadoras = {self.player_char: [], self.computer_char: []}
+
+        # Para ello cogemos cada una de las celdas vacías...
+        # Ponemos como bucle externo las estructuras para calcular tan sólo una vez
+        # contenido_casillas, pq estaría en bucle exterior
+        for estructura in self.estructura.values():
+            # Calculamos el contenido del board en esa estructura...
+            contenido_casillas = [self.board[i] for i in estructura]
+            # Para que haya alguna casilla que sea ganadora, debe haber exactamente una casilla libre
+            if contenido_casillas.count(CHAR_VACIO) != 1:
+                continue
+            # Veamos ahora donde está esa casilla libre...
+            # No hace falta probar try con el método index, porque ya sabemos que el carácter está!!
+            # Si no estuviera, el método index daría una ValueError exception...
+            indice = contenido_casillas.index(CHAR_VACIO)
+            casilla = estructura[indice]
+            if contenido_casillas.count(self.player_char) == 2:
+                jugadas_ganadoras[self.player_char].append(casilla)
+            elif contenido_casillas.count(self.computer_char) == 2:
+                    jugadas_ganadoras[self.computer_char].append(casilla)
+
+        return jugadas_ganadoras
+
+
+        # Otra forma más lenta, con dos bucles...
+        # for estructura in self.estructura.values():
+        #     # Y miramos si está en cada una de las estructuras
+        #     for cell in self.empty_cells:
+        #         if cell not in estructura:
+        #             continue
+        #         contenido_casillas = [self.board[i] for i in estructura]
+        #         if contenido_casillas.count(self.player_char) == 2:
+        #             jugadas_ganadoras[self.player_char].append(cell)
+        #         elif contenido_casillas.count(self.computer_char) == 2:
+        #             jugadas_ganadoras[self.computer_char].append(cell)
+
 
     def is_board_full(self):
         # Si está full, y nadie ha ganada, significa que será empate!!
