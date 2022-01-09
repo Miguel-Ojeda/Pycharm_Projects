@@ -1,3 +1,7 @@
+#! python
+'''Juego del Tic Tac Toe (Tres en Raya)
+Jugador contra ordenador'''
+
 from tic_tac_toe import *
 
 partida = Tic_Tac_Toe_Game()
