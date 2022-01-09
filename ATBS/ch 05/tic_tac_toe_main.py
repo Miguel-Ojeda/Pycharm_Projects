@@ -10,7 +10,7 @@ while True:
         nueva_partida = False
 
     partida.print_board()
-    print('Jugadas ganadoras... ', partida.get_winner_cells())
+    # print('Jugadas ganadoras... ', partida.get_winner_cells())
     # partida.print_estructuras()
 
     if partida.turno_jugador:

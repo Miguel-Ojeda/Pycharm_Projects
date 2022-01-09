@@ -2,6 +2,8 @@
 import random
 import logging
 logging.basicConfig(level=logging.DEBUG, format=' %(levelname)s - %(message)s')
+# De momento, desactivo logging....
+logging.disable(logging.CRITICAL)
 
 
 # CONSTANTES...
@@ -51,20 +53,15 @@ class Tic_Tac_Toe_Game:
         print('La numeración de las casillas es la siguiente...')
         self.print_board()
 
-        # Cómo se llama el jugador...
-        self.player_name = input('¿Cómo te llamas? --> ')
-
         # Otras variables que nos harán falta; las inicializaremos en iniciar_partida....
         self.empty_cells = self.ultima_jugada = self.computer_char = self.player_char = self.turno_jugador = None
 
-    def iniciar_partida(self):
-        # Borramos el tablero para la nueva partida...
-        self.board = [CHAR_VACIO for i in range(9)]
+        # Cómo se llama el jugador...
+        self.player_name = input('¿Cómo te llamas? --> ')
+        # ¿Con qué piezas quiere jugar??
+        self.jugador_elige_piezas()
 
-        # Configuramos como disponibles actualmente todas las celdas
-        self.empty_cells = [i for i in range(9)]
-
-        # Elegimos ahora las piezas y se sortea el turno...
+    def jugador_elige_piezas(self):
         while True:
             eleccion = input(f'¿Con qué piezas prefieres jugar, {self.player_name}?  {CHAR_O} ... {CHAR_X} ---> ')
             eleccion = eleccion.upper()
@@ -80,9 +77,20 @@ class Tic_Tac_Toe_Game:
                     self.computer_char = CHAR_X
                 break
 
-        print(f'{self.player_name}, juegas con {self.player_char}. El ordenador jugará con {self.computer_char}.')
+        print(f'{self.player_name}, juegas con {self.player_char}.'
+              f'El ordenador jugará con {self.computer_char}.')
+
+
+    def iniciar_partida(self):
+        # Borramos el tablero para la nueva partida...
+        self.board = [CHAR_VACIO for i in range(9)]
+
+        # Configuramos como disponibles actualmente todas las celdas
+        self.empty_cells = [i for i in range(9)]
+
+        # Se sortea el turno...
         print('Hagamos el sorteo para ver quién empieza primero...')
-        time.sleep(2)
+        # time.sleep(2)
         self.turno_jugador = random.choice((True, False))
 
 
@@ -168,7 +176,7 @@ class Tic_Tac_Toe_Game:
         AI-2. Si puede evitar que ganemos, pues que lo evite...
         AI-3. Elegir al azar con prioridad: a) centro, b) esquinas, c) centro lados, '''
         print('Le toca mover al ordenador...')
-        time.sleep(1.5)
+        # time.sleep(1.5)
         # Actualizamos el juego...
         jugadas_ganadoras = self.get_winner_cells()
         # Es un diccionario con la forma.... { CHAR_X: [casillas ganadoras para X], CHAR_O: [casillas ganadoras para O]}
