@@ -25,24 +25,23 @@ def table_printer(lista):
 
     max_len_sublistas = []
     for sublista in lista:
-        max_len = 0
-        for item in sublista:
-            if len(item) > max_len:
-                max_len = len(item)
-        max_len += 5
-        max_len_sublistas.append(max_len)
+        max_sublista = 5 + max([len(item) for item in sublista])
+        max_len_sublistas.append(max_sublista)
 
-    for sublista in lista:
-        for item in sublista:
-            item.ljust()
+    num_items_sublista = len(lista[0])  # todas las sublistas tienen mimsmo número de ítems...
 
-    return max_len_sublistas
+    for j in range(num_items_sublista):
+        linea = []
+        for i in range(len(lista)):
+            linea.append(lista[i][j].rjust(max_len_sublistas[i]))
+        print(''.join(linea))
 
 
-
-tableData = [['apples', 'oranges', 'cherries', 'banana'],
-             ['Alice', 'Bob', 'Carol', 'David'],
-             ['dogs', 'cats', 'moose', 'goose'],
+tableData = [['apples', 'oranges', 'Blue cherries', 'banana'],
+             ['Alicia', 'Bob Esponja', 'Carol', 'David'],
+             ['dogs', 'cats', 'moose', 'Mary Goose Louis'],
              ]
 
-print(table_printer(tableData))
+# print(table_printer(tableData))
+
+table_printer(tableData)
