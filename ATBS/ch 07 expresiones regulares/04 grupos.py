@@ -49,6 +49,3 @@ match_object2 = pattern_object_2.search('My phone number is (415) 555-4242.')
 if match_object2:
     area, number = match_object2.groups()
     print(f'Código de área: {area}, número: {number}')
-
-# Otros caracteres con significado especial, a los que debemos anteponer \ si queremos buscarlos...
-# ----> .  ^  $  *  +  ?  {  }  [  ]  \  |  (  )
