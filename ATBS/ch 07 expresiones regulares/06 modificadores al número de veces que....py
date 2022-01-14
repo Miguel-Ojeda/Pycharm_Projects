@@ -75,6 +75,13 @@ mo3 = batRegex.search('The Adventures of Batman')
 # Otra forma de uso!! {min_num, max_num}
 # (Ha){3,5} se verificaría con 3, 4, o 5 repeticiones....
 
+# Otras opciones...
+# The {n} matches exactly n of the preceding group.
+# The {n,} matches n or more of the preceding group.
+# The {,m} matches 0 to m of the preceding group.
+# The {n,m} matches at least n and at most m of the preceding group.
+# {n,m}? or *? or +? performs a non-greedy match of the preceding group.
+
 # SOn equivalentes!!!
 # (Ha){3}  --> (Ha)(Ha)(Ha)
 # (Ha){3,5} --> ((Ha)(Ha)(Ha))|((Ha)(Ha)(Ha)(Ha))|((Ha)(Ha)(Ha)(Ha)(Ha))
