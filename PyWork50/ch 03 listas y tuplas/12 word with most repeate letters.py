@@ -16,7 +16,7 @@ def most_repeating_word(words):
     letra = ''
     for word in words:
         # Obtenemos el counter de cada palabra
-        # y miramos la ocurrenica más común...
+        # y miramos la ocurrencia más común...
         # Nos da una lista con una tupla, cuyo primer elemento es el item (en este caso letra)
         # que más se repite y el segundo elemento, el número de veces que se repite
         tupla = Counter(word).most_common(1)[0]
