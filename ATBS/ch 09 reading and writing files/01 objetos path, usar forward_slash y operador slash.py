@@ -4,7 +4,10 @@ from pathlib import Path
 # unidendo todos los items construye el path....
 path1 = Path('spam', 'bacon', 'eggs')
 print(path1) # spam\bacon\eggs
-print(repr(path1))   # WindowsPath('spam/bacon/eggs')
+print(repr(path1))
+# WindowsPath('spam/bacon/eggs')
+# Obtenemos un WindowsPath pq nuestro sistema es WINDOWS
+
 
 
 myFiles = ['accounts.txt', 'details.csv', 'invite.docx']
