@@ -1,0 +1,355 @@
+Cuestionario "cuestionarios/cuestionario_13.txt" sobre las capitales de US:
+Nombre y apellidos:
+
+ELIGE LA CAPITAL CORRECTA DE CADA ESTADO
+
+1) La capital de Utah es:
+
+	A: Dover               
+	B: Providence          
+	C: Jefferson City      
+	D: Salt Lake City      
+
+2) La capital de South Carolina es:
+
+	A: Columbia            
+	B: Cheyenne            
+	C: Nashville           
+	D: Harrisburg          
+
+3) La capital de Arizona es:
+
+	A: Raleigh             
+	B: Pierre              
+	C: Phoenix             
+	D: Santa Fe            
+
+4) La capital de Nebraska es:
+
+	A: Lincoln             
+	B: Des Moines          
+	C: Madison             
+	D: Phoenix             
+
+5) La capital de New York es:
+
+	A: Albany              
+	B: Salem               
+	C: Phoenix             
+	D: Raleigh             
+
+6) La capital de West Virginia es:
+
+	A: Albany              
+	B: Charleston          
+	C: Jefferson City      
+	D: Boise               
+
+7) La capital de Maine es:
+
+	A: Concord             
+	B: Santa Fe            
+	C: Augusta             
+	D: Honolulu            
+
+8) La capital de South Dakota es:
+
+	A: Salt Lake City      
+	B: Pierre              
+	C: Little Rock         
+	D: Atlanta             
+
+9) La capital de Alaska es:
+
+	A: Oklahoma City       
+	B: Juneau              
+	C: Albany              
+	D: Nashville           
+
+10) La capital de Illinois es:
+
+	A: Salt Lake City      
+	B: Springfield         
+	C: Santa Fe            
+	D: Helena              
+
+11) La capital de Oklahoma es:
+
+	A: Oklahoma City       
+	B: Boise               
+	C: Jackson             
+	D: Columbia            
+
+12) La capital de Idaho es:
+
+	A: Montgomery          
+	B: Des Moines          
+	C: Saint Paul          
+	D: Boise               
+
+13) La capital de Maryland es:
+
+	A: Juneau              
+	B: Salt Lake City      
+	C: Dover               
+	D: Annapolis           
+
+14) La capital de Tennessee es:
+
+	A: Nashville           
+	B: Annapolis           
+	C: Jefferson City      
+	D: Raleigh             
+
+15) La capital de Vermont es:
+
+	A: Montpelier          
+	B: Nashville           
+	C: Cheyenne            
+	D: Bismarck            
+
+16) La capital de Kentucky es:
+
+	A: Topeka              
+	B: Frankfort           
+	C: Jackson             
+	D: Indianapolis        
+
+17) La capital de Louisiana es:
+
+	A: Salt Lake City      
+	B: Baton Rouge         
+	C: Charleston          
+	D: Harrisburg          
+
+18) La capital de New Mexico es:
+
+	A: Lansing             
+	B: Santa Fe            
+	C: Topeka              
+	D: Trenton             
+
+19) La capital de Massachusetts es:
+
+	A: Madison             
+	B: Annapolis           
+	C: Boston              
+	D: Indianapolis        
+
+20) La capital de California es:
+
+	A: Tallahassee         
+	B: Atlanta             
+	C: Harrisburg          
+	D: Sacramento          
+
+21) La capital de Colorado es:
+
+	A: Little Rock         
+	B: Albany              
+	C: Harrisburg          
+	D: Denver              
+
+22) La capital de Alabama es:
+
+	A: Lincoln             
+	B: Dover               
+	C: Montgomery          
+	D: Harrisburg          
+
+23) La capital de Indiana es:
+
+	A: Saint Paul          
+	B: Indianapolis        
+	C: Santa Fe            
+	D: Frankfort           
+
+24) La capital de Washington es:
+
+	A: Olympia             
+	B: Baton Rouge         
+	C: Phoenix             
+	D: Pierre              
+
+25) La capital de North Carolina es:
+
+	A: Raleigh             
+	B: Honolulu            
+	C: Santa Fe            
+	D: Juneau              
+
+26) La capital de Wyoming es:
+
+	A: Frankfort           
+	B: Springfield         
+	C: Santa Fe            
+	D: Cheyenne            
+
+27) La capital de Wisconsin es:
+
+	A: Tallahassee         
+	B: Baton Rouge         
+	C: Little Rock         
+	D: Madison             
+
+28) La capital de Ohio es:
+
+	A: Olympia             
+	B: Columbus            
+	C: Nashville           
+	D: Tallahassee         
+
+29) La capital de Montana es:
+
+	A: Concord             
+	B: Lincoln             
+	C: Olympia             
+	D: Helena              
+
+30) La capital de Iowa es:
+
+	A: Des Moines          
+	B: Juneau              
+	C: Madison             
+	D: Montgomery          
+
+31) La capital de Michigan es:
+
+	A: Baton Rouge         
+	B: Lansing             
+	C: Jackson             
+	D: Little Rock         
+
+32) La capital de North Dakota es:
+
+	A: Atlanta             
+	B: Annapolis           
+	C: Indianapolis        
+	D: Bismarck            
+
+33) La capital de Minnesota es:
+
+	A: Salem               
+	B: Saint Paul          
+	C: Dover               
+	D: Phoenix             
+
+34) La capital de Pennsylvania es:
+
+	A: Cheyenne            
+	B: Harrisburg          
+	C: Des Moines          
+	D: Honolulu            
+
+35) La capital de Hawaii es:
+
+	A: Santa Fe            
+	B: Lincoln             
+	C: Columbus            
+	D: Honolulu            
+
+36) La capital de Nevada es:
+
+	A: Bismarck            
+	B: Santa Fe            
+	C: Providence          
+	D: Carson City         
+
+37) La capital de Texas es:
+
+	A: Sacramento          
+	B: Albany              
+	C: Bismarck            
+	D: Austin              
+
+38) La capital de Virginia es:
+
+	A: Concord             
+	B: Topeka              
+	C: Saint Paul          
+	D: Richmond            
+
+39) La capital de Mississippi es:
+
+	A: Cheyenne            
+	B: Jackson             
+	C: Juneau              
+	D: Santa Fe            
+
+40) La capital de New Jersey es:
+
+	A: Sacramento          
+	B: Trenton             
+	C: Honolulu            
+	D: Juneau              
+
+41) La capital de Georgia es:
+
+	A: Austin              
+	B: Jefferson City      
+	C: Atlanta             
+	D: Denver              
+
+42) La capital de Kansas es:
+
+	A: Providence          
+	B: Lincoln             
+	C: Nashville           
+	D: Topeka              
+
+43) La capital de Missouri es:
+
+	A: Jefferson City      
+	B: Des Moines          
+	C: Olympia             
+	D: Montpelier          
+
+44) La capital de Delaware es:
+
+	A: Dover               
+	B: Jackson             
+	C: Lansing             
+	D: Little Rock         
+
+45) La capital de Arkansas es:
+
+	A: Little Rock         
+	B: Baton Rouge         
+	C: Bismarck            
+	D: Denver              
+
+46) La capital de New Hampshire es:
+
+	A: Concord             
+	B: Springfield         
+	C: Salt Lake City      
+	D: Pierre              
+
+47) La capital de Rhode Island es:
+
+	A: Jackson             
+	B: Santa Fe            
+	C: Augusta             
+	D: Providence          
+
+48) La capital de Florida es:
+
+	A: Olympia             
+	B: Juneau              
+	C: Providence          
+	D: Tallahassee         
+
+49) La capital de Oregon es:
+
+	A: Hartford            
+	B: Albany              
+	C: Salem               
+	D: Salt Lake City      
+
+50) La capital de Connecticut es:
+
+	A: Salt Lake City      
+	B: Santa Fe            
+	C: Helena              
+	D: Hartford            
+

@@ -55,5 +55,3 @@ print(crea_variables.diccionario)
 
 # Además, hay cosas que no pueden ser escritas con pretty print
 # a un fichero de texto, como File objects por ejemplo....
-
-

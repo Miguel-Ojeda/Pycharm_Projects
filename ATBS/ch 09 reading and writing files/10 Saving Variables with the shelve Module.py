@@ -43,14 +43,24 @@ shelf_file.close()
 # Lo haremos mejor con with !!!
 with shelve.open('my_data') as shelf_file:
     lista_recuperada = shelf_file['lista']
-    diccionio_recuperado = shelf_file['diccionario']
+    diccionario_recuperado = shelf_file['diccionario']
 # shelf_file.close()  NO ES NECESARIO, se hace automáticamente al salir del contexto!!!
 
 print(lista_recuperada, lista == lista_recuperada)
-print(diccionio_recuperado, diccionario == diccionio_recuperado)
+print(diccionario_recuperado, diccionario == diccionario_recuperado)
 
 
-
-
+# Otra cosa interesante, para saber si una clave existe en un shelf
+# por ejemplo, queremos saber si cierta clave, 'a', existe....
+# opción 1:
+# if shelf_file.has_key('a'):
+# opción 2: como en los diccionarios...
+# if 'a' in shelf_file:
+# if 'a' in shelf_file.keys():
+# opción 3: intentar acceder con un try:
+# try:
+#     variable = shelf_file['a']
+# except KeyError:
+#     variable = ......
 
 
