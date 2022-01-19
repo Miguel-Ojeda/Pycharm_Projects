@@ -53,14 +53,14 @@ while True:
 window.close()
 logging.debug(f'El directorio elegido ha sido {str(path_base)}')
 logging.debug(f'Tenemos {numero_de_pdfs} PDFs. para analizar')
-# sys.exit()
 
 # Creamos el subdirectorio para los ficheros CSV
 # Le añadimos el tiempo actual, para no sobreescribir lo que ya hubiera...
 local_time = time.localtime()
 str_time = time.strftime('%y%m%d-%H%M%S')
 path_csv = path_base / str_time
-path_csv.mkdir(exist_ok=True)  # Si existiera, (que es casi imposible pq va por tiempo) pues que no pase nada...
+path_csv.mkdir(exist_ok=True)
+# Si existiera, (que es casi imposible pq va por tiempo) pues que no pase nada...
 
 for _, pdf_file in enumerate(path_base.glob('*.[pP][dD][fF]')):
     # Averiguamos el nombre (sin la extensión) del pdf
@@ -72,7 +72,13 @@ for _, pdf_file in enumerate(path_base.glob('*.[pP][dD][fF]')):
     sg.one_line_progress_meter(f'Procesando {numero_de_pdfs} PDFs...', _ + 1, numero_de_pdfs,
                                f'Procesando fichero {_ + 1} de {numero_de_pdfs} --> {nombre_del_fichero}',
                                key='HLC_METER', orientation='h', no_button=True)
-    tabula.convert_into(input_path=pdf_file, output_path=str(csv_file), output_format='csv', pages='all')
+    tabula.convert_into(input_path=pdf_file, output_path=str(csv_file),
+                        output_format='csv', pages='all',
+                        java_options='-Dfile.encoding=UTF8'
+                        )
+    # Tuve que añadir la opción java_options pq, aunque en el ordenador de casa no había problemas
+    # en el trabajo decía que había error no se qué de UTF-8, creo que puede que fuera la configuración JAVA
+    # Lo comentaban en la documentación y buscando en internet!!
 
 window.close()
 sg.popup('Proceso terminado')
