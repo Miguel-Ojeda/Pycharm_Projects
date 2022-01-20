@@ -91,6 +91,23 @@ zip_object.close()   # Cuidado, no olvidar!! mejor con with....!!!
 
 # ESTO YA ES OTRA COSA!!!!
 
+# PERO SIGUE MAL... pq como añado ficheros...
+# Si hubiera alguna carpeta vacía... como las hay.... no aparecen tampoco...!!
+# Por tanto, tb. tengo que añadir carpetas (al menos las vacías)!!!
+zip_object = zipfile.ZipFile('ejemplo_os.walk.BIEN_V2.zip', 'w')
+for folder, folders_list, files_list in os.walk(path):
+    zip_object.write(Path(folder).relative_to(Path.cwd()))
+    for file in files_list:
+        # File es tan solo la cadena con el nombre (sin la ruta) del fichero..
+        # Habrá que obtener el path para poder agregarlo al zip
+        path_file = Path(folder) / file
+        path_file_relative = path_file.relative_to(Path.cwd())
+        zip_object.write(path_file_relative, compress_type=zipfile.ZIP_DEFLATED)
+        print(f'Añadiendo el fichero {str(path_file_relative)}')
+
+zip_object.close()   # Cuidado, no olvidar!! mejor con with....!!!
+
+
 
 # Si queremos añadir ficheros a un ZIP ya existente... lo haríamos
 # abriendo un objeto ZIP en modo 'a' (si lo abriéramos en modo 'w' nos lo cargaríamos!!!)
