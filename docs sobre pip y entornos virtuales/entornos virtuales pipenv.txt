@@ -6,6 +6,24 @@ It creates:
 - A Pipfile containing software dependencies ...
 - and a Pipfile.lock for ensuring deterministic builds.
 
+Pipenv tira de virtualenv (si no estuviera instalado, lo necesita y se instalará)
+Además, pipenv al crear el entorno, sólo crea en el directorio donde se crea dos ficheros (pipfile y pipfile.lock). El resto de la estructura necesaria se va a crear en un directorio aparte...
+Cuando se cree el entorno virtual, automáticamente se nombrará con el nombre de la carpeta raíz seguido de un identificador y se guardará en:
+
+En Linux/Mac: /home/<USUARIO>/.local/share/virtualenvs/nombre-de-carpeta_donde_se_creo + id
+En Windows: C:\Users\<USUARIO>\.virtualenvs\nombre-de-carpeta_donde_se_creo + id
+O sea, vemos que, para crear la estructura tira del módulo virtualenv
+En particular, los paquetes se instalarán dentro de la carpeta “lib” que está dentro del entorno virtual exclusivo de mi proyecto.
+
+O sea...
+Pipenv creará un entorno virtual por proyecto en la carpeta “virtualenvs” (en la ruta anterior) que llamará con el mismo nombre que el proyecto seguido de un identificador.
+Y dentro del propio proyecto tan solo se creará un fichero de requisitos llamado “Pipfile” (y “Pipfile.lock”; ambos los veremos más adelante) que nos servirá para recrear el entorno virtual (con la misma versión de Python y mismos paquetes con las mismas versiones) en otro lado u otra máquina diferente (sin tener que copiar la carpeta entera del entorno virtual, que no es una buena práctica).
+
+O sea, es más 'limpio' que virtualenv o venv, pq dentro del directorio donde creamos el proyecto tan solo crea los 2 ficheros pipfile(.lock), mientras que el resto de la estructura necesaria (interprete, librerías, ...) va en otro sitio distinto!!
+Esto liberará nuestro proyecto de código y de ficheros que no se deben compartir/distribuir;
+No tendremos que hacer nada para evitar que se copien al git el directorio con el entorno, pq estará en otro lugar!! lo único que se creará son los dos ficheros con los “requisitos del entorno virtual exclusivo” dentro de nuestro proyecto que sí se deben compartir/distribuir: “Pipfile.lock” y “Pipfile”.
+
+
 “Determinism” means that each and every time you download the software in a new virtual environment, you will have exactly the same configuration.
 
 The problems that Pipenv seeks to solve are multi-faceted:
@@ -100,6 +118,14 @@ Por ejemplo pip list ...
 
 4º salir con exit...
 (django) $ exit
+O sea, si hemos entrado con pipenv shell (que lo que hace simplemente es crear un nuevo shell donde está activa el entorno) simplemente hemos de salir de ése shell para volver al nivel normal del sistema...
+En cambio, si hemos entrado 'automáticamente' haciendo pipenv run script... pues no habrá que hacer nada... al terminar la ejecución del programa pues ya habremos salido...
+
+Otra opción más rápida, es, después de instalar los paquetes (paso 1) directamente...
+utilizar 
+pipenv run hace que se ejecute el programa utilziando nuestro entorno!!
+
+
 
 COMANDOS: 
 Las opciones principales de pipenv son:
@@ -144,11 +170,17 @@ pipenv check asserts that PEP 508 requirements are being met by the current envi
 
 pipenv graph will print a pretty graph of all your installed dependencies.
 
+pipenv --venv
+Consultar todos los entornos virtuales creados con Pipenv
+Podremos listar todos los entornos virtuales creados con:
+
+Eliminar un entorno virtual
+Para eliminar el entorno virtual (solo elimina la carpeta con el entorno virtual en la carpeta “virtualenvs”; no elimina los ficheros de requerimientos “Pipfile.lock” y “Pipfile”):
+pipenv --rm
+“Pipfile.lock” y “Pipfile” es lógico que no se eliminen... quedan sin eliminar para futuras reinstalaciones y porque es parte de la información del proyecto. Si quieres eliminarlos puedes hacerlo a mano con: rm Pipfile Pipfile.lock
 
 
-Otra opción más rápida, es, después de instalar los paquetes (paso 1) directamente...
-utilizar 
-pipenv run hace que se ejecute el programa utilziando nuestro entorno!!
+
 
 Resumen: The basic pattern is to install new packages with pipenv, activate them with pipenv shell, and then exit when done.
 Además, si ponemos pipenv -h nos aparece un resumen donde podemos ver todas las opciones
@@ -160,8 +192,24 @@ You can also specify $ pipenv install -r path/to/requirements.txt to import a re
 If your requirements file has version numbers pinned, you’ll likely want to edit the new Pipfile to remove those, and let pipenv keep track of pinning. If you want to keep the pinned versions in your Pipfile.lock for now, run pipenv lock --keep-outdated. Make sure to upgrade soon!
 
 
+FICHEROS Pipfile y Pipfile.lock
+Estos dos ficheros “Pipfile.lock” y “Pipfile” son los requisitos de nuestro proyecto con la configuración del entorno virtual exclusivo; que los creó Pipenv al crear el entorno virtual
+Según vayamos instalando, desinstalando, actualizando módulo, los irá actualizando.
 
+Estos ficheros, si es necesario, antes de compartirlos, podremos modificar para cambiar la configuración a mano (como cambiar la versión de Python)
+Con ellos podremos regenerar desde ellos el entorno virtual (tanto si algo falla del entorno virtual para poder recrearlo, así como para copiar/mover nuestro proyecto a otra máquina para crear el entorno virtual con exactamente la configuración necesaria para que nuestro proyecto funcione). 
 
+Ficheros de requisitos “Pipfile.lock” y “Pipfile”
+Los ficheros “Pipfile.lock” y “Pipfile” son los ficheros de requisitos donde se guarda la configuración completa del entorno virtual de Python (Virtualenv) gestionado por Pipenv.
+
+Estos serán muy útiles si en un futuro copiamos/distribuimos la carpeta de nuestro proyecto que contenga estos dos ficheros a cualquier otra máquina (otro ordenador u otro servidor), y si volvemos ejecutamos el comando en esa otra máquina:
+
+pipenv install a secas, al crear el entorno, hace que busque estos ficheros... si los encuentra, pues con eso sería capaza de regenerar todo el entorno con dichos requisitos (con los paquetes instalados, con la versión de Python necesaria, etc.);
+de este modo, nuestro proyecto funcionará perfectamente en esa otra máquina.
+A último remedio, pipenv install, si no existe previamente el entorno, si tampoco existen Pipfile y Pipfile.lock, pero sí existe un requirements.txt creado pues se tirará de ese fichero para crear el entorno con los paquetes de requirements.txt
+
+El fichero de requisitos más importante es “Pipfile”, con este fichero Pipenv generará el entorno virtual (al ejecutar “pipenv install” sino existe uno previo generará un fichero “Pipfile” por defecto; si existe, lo leerá y aplicará dicha configuración) y creará el fichero “Pipfile.lock” (lo mismo, sino existe se creará y si existe se leerá). El fichero “Pipfile.lock” es también importante para nuestro proyecto ya que definirá las versiones concretas con las que funcionará nuestro proyecto; es decir, nos asegurará una configuración en concreto (“bloqueará una configuración”, por eso lo de “lock”), para que no se cambien las versiones (principalmente para que no se actualicen las versiones de paquetes o Python) si copiamos/distribuimos nuestro proyecto y por ello nos aseguramos que funcione correctamente en cualquier máquina.
+Tanto “Pipfile.lock” como “Pipfile” son parte imprescindible del proyecto por lo que deberían ser incluidos en un control de versiones (un repositorio como Git).
 
 
 
@@ -269,7 +317,6 @@ Installing dependencies from Pipfile.lock...
 
 To activate this project's virtualenv, run the following:
 $ pipenv shell
-
 
 
 
