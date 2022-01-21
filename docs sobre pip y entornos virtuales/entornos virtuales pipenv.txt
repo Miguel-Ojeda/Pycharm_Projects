@@ -1,0 +1,177 @@
+https://docs.pipenv.org/
+
+pipenv es la herramienta más moderna, recomendada oficialmente (porque soluciona muchos de los inconvenientes de venv),
+Lleva a la vez la instalación de paquetes, y la creación de entornos virtuales.
+It creates:
+- A Pipfile containing software dependencies ...
+- and a Pipfile.lock for ensuring deterministic builds.
+
+“Determinism” means that each and every time you download the software in a new virtual environment, you will have exactly the same configuration.
+
+The problems that Pipenv seeks to solve are multi-faceted:
+
+You no longer need to use pip and virtualenv separately. They work together.
+Managing a requirements.txt file can be problematic, so Pipenv uses the upcoming Pipfile and Pipfile.lock instead, which is superior for basic use cases.
+Hashes are used everywhere, always. Security. Automatically expose security vulnerabilities.
+Give you insight into your dependency graph (e.g. $ pipenv graph).
+Streamline development workflow by loading .env files.
+
+Para instalar pipenv:
+1º Actualizamos pip por si acaso:
+pip install -U pip --user 
+2º Instalar el paquete:
+pip install -U pipenv --user
+(si no pusiéramos -U, no nos actualizaría a la última versión si tuviéramos alguna versión anterior instalada).
+
+Veamos ahora como funcionaría...
+0º creamos un directorio para trabajar en un nuevo proyecto… y nos colocamos en él…
+$ cd ~/Desktop    //   $ mkdir django  //  $ cd django
+
+1º Instalamos los paquetes que necesitamos ... PERO CON LA MISMA APLICACIÓN PIPENV !!!
+$ pipenv install django~=3.1.0
+Simplemente el hecho de invocar el pipenv hace que, si existía ya el entorno, se actualice la información con los nuevos paquetes instalados y quitados o actualizados... y si no existía pues que se cree!!
+Al terminar de instalar nuetros paquetes... 
+Se habrán creado dos nuevos ficheros en el directorio: Pipfile and Pipfile.lock. Ya temenos todo lo que se necesita para crear el nuevo entorno…
+Cuando activemos el entorno utilizará estos ficheros para configurar el entorno!!
+The Pipfile is used to track which dependencies your project needs in case you need to re-install them, such as when you share your project with others.
+
+2º Activar el entorno!!!
+$ pipenv shell
+En Mac sabremos que estamos en el entorno porque veremos entre paréntesis el nombre del directorio: (django) $
+¿Cómo saberlo en Windows? From within a Pipenv shell, you can run 'pip -V' which will show you the path to the pip version you're using -- which will include the virtual environment path, and the Python…
+También, como hemos comentado en el otro manual de los entornos... podríamos introducir algún comando que nos de info sobre el sistema y de esta forma saber dónde estamos...
+Por ejemplo pip list ...
+
+3º trabajar
+
+4º salir con exit...
+(django) $ exit
+
+COMANDOS: 
+Las opciones principales de pipenv son:
+
+pipenv install / pipenv uninstall -> 
+instalan y desinstalan paquetes, y se actualiza en el fichero Pipfile la info del entorno
+Observar que si decimos pipenv install y no damos ningún paquete... lo que se hace es crear un entorno
+y utilizar la info del fichero pipfile (que hemos puesto allí pq hemos generado anteriormente o alguien lo ha pasado) para instalar los módulos y generar el entorno!!
+
+pipenv lock -> se genera el fichero Pipfile.lock
+
+pipenv --two indica que queremos usar python 2 
+pipenv --three  indica que queremos usar python 3
+(esto es algo que no tiene venv!! pipenv incluye en el entorno la versión de python que le digamos, y todo esto tb. va incluido en el pipfile...)
+
+pipenv shell will spawn a shell with the virtualenv activated!!
+
+pipenv run will run a given command from the virtualenv, with any arguments forwarded
+Ejemplo: pipenv run miprograma.py
+O sea, no hace falta activar previamente el entorno; el programa detecta automáticamente
+el entorno que hay en cada directorio y ejecuta el script generando el entorno adecuado!!
+COn esto es todo muy rápido, no hace falta ir activando y desactivando entornos según cambiamos de proyecto!! todo esto se hace de forma automática con el pipenv run ...
+
+pipenv check asserts that PEP 508 requirements are being met by the current environment.
+
+pipenv graph will print a pretty graph of all your installed dependencies.
+
+
+
+Otra opción más rápida, es, después de instalar los paquetes (paso 1) directamente...
+utilizar 
+pipenv run hace que se ejecute el programa utilziando nuestro entorno!!
+
+Resumen: The basic pattern is to install new packages with pipenv, activate them with pipenv shell, and then exit when done.
+Además, si ponemos pipenv -h nos aparece un resumen donde podemos ver todas las opciones
+
+
+Más...
+Usage
+$ pipenv
+Usage: pipenv [OPTIONS] COMMAND [ARGS]...
+
+Options:
+  --where          Output project home information.
+  --venv           Output virtualenv information.
+  --py             Output Python interpreter information.
+  --envs           Output Environment Variable options.
+  --rm             Remove the virtualenv.
+  --bare           Minimal output.
+  --man            Display manpage.
+  --three / --two  Use Python 3/2 when creating virtualenv.
+  --python TEXT    Specify which version of Python virtualenv should use.
+  --site-packages  Enable site-packages for the virtualenv.
+  --version        Show the version and exit.
+  -h, --help       Show this message and exit.
+
+
+Usage Examples:
+   Create a new project using Python 3.7, specifically:
+   $ pipenv --python 3.7
+
+   Remove project virtualenv (inferred from current directory):
+   $ pipenv --rm
+
+   Install all dependencies for a project (including dev):
+   $ pipenv install --dev
+   Imagino que lo que hace para ello es utilizar la info del pipfile generado anteriormente por alguien!!
+   Hay un ejemplo luego de esto y dice...
+   Installing dependencies from Pipfile.lock...
+   Ver el ejemplo que viene luego!!!
+   
+   Create a lockfile containing pre-releases:
+   $ pipenv lock --pre
+
+   Show a graph of your installed dependencies:
+   $ pipenv graph
+
+   Check your installed dependencies for security vulnerabilities:
+   $ pipenv check
+
+   Install a local setup.py into your virtual environment/Pipfile:
+   $ pipenv install -e .
+
+   Use a lower-level pip command:
+   $ pipenv run pip freeze
+
+Commands:
+  check      Checks for security vulnerabilities and against PEP 508 markers
+             provided in Pipfile.
+  clean      Uninstalls all packages not specified in Pipfile.lock.
+  graph      Displays currently–installed dependency graph information.
+  install    Installs provided packages and adds them to Pipfile, or (if no
+             packages are given), installs all packages from Pipfile.
+  lock       Generates Pipfile.lock.
+  open       View a given module in your editor.
+  run        Spawns a command installed into the virtualenv.
+  scripts    Displays the shortcuts in the (optional) [scripts] section of
+             Pipfile.
+  shell      Spawns a shell within the virtualenv.
+  sync       Installs all packages specified in Pipfile.lock.
+  uninstall  Un-installs a provided package and removes it from Pipfile.
+Locate the project:
+
+$ pipenv --where
+/Users/kennethreitz/Library/Mobile Documents/com~apple~CloudDocs/repos/kr/pipenv/test
+Locate the virtualenv:
+
+$ pipenv --venv
+/Users/kennethreitz/.local/share/virtualenvs/test-Skyy4vre
+Locate the Python interpreter:
+
+$ pipenv --py
+/Users/kennethreitz/.local/share/virtualenvs/test-Skyy4vre/bin/python
+Install packages:
+
+$ pipenv install
+Creating a virtualenv for this project...
+...
+No package provided, installing all dependencies.
+Virtualenv location: /Users/kennethreitz/.local/share/virtualenvs/test-EJkjoYts
+Installing dependencies from Pipfile.lock...
+...
+
+To activate this project's virtualenv, run the following:
+$ pipenv shell
+
+
+
+
