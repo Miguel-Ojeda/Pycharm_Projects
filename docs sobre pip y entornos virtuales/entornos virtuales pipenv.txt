@@ -130,6 +130,9 @@ pipenv --three  indica que queremos usar python 3
 (esto es algo que no tiene venv!! pipenv incluye en el entorno la versión de python que le digamos, y todo esto tb. va incluido en el pipfile...)
 
 pipenv shell will spawn a shell with the virtualenv activated!!
+PARA SALIR DEL ENTORNO, EN ESTE CASO SIMPLEMENTE, DEBEMOS SALIR DEL SHELL
+Por ejemplo con exit (o cerrando la terminal, claro!!)
+
 
 pipenv run will run a given command from the virtualenv, with any arguments forwarded
 Ejemplo: pipenv run miprograma.py
@@ -246,16 +249,16 @@ Locate the project:
 
 $ pipenv --where
 /Users/kennethreitz/Library/Mobile Documents/com~apple~CloudDocs/repos/kr/pipenv/test
-Locate the virtualenv:
 
+Locate the virtualenv:
 $ pipenv --venv
 /Users/kennethreitz/.local/share/virtualenvs/test-Skyy4vre
-Locate the Python interpreter:
 
+Locate the Python interpreter:
 $ pipenv --py
 /Users/kennethreitz/.local/share/virtualenvs/test-Skyy4vre/bin/python
-Install packages:
 
+Install packages:
 $ pipenv install
 Creating a virtualenv for this project...
 ...
@@ -294,3 +297,8 @@ $ pipenv uninstall supports all of the parameters in pipenv install, as well as 
 
 $ pipenv lock
 $ pipenv lock is used to create a Pipfile.lock, which declares all dependencies (and sub-dependencies) of your project, their latest available versions, and the current hashes for the downloaded files. This ensures repeatable, and most importantly deterministic, builds.
+
+
+Si quisiéramos ver qué ficheros están instalados en pipenv podríamos echar un vistazo al fichero pipfile...
+
+Otra opción---> pipenv run pip list
