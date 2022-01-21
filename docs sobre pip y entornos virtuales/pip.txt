@@ -25,7 +25,10 @@ To install a version that’s “compatible” with a certain version:
 pip install "SomeProject~=1.4.2"
 Esto significa instalar cualquier versión de la 1.4 que sea >= a 1.4.2
 
-Cuando se use un operando comparador como >, < o cualquier otro carácter especial que puede ser interpretado por el intérprete de comandos, el nombre del paquete y la versión deben ir entre comillas.
+Cuando se use un operando comparador como >, < o cualquier otro carácter especial que puede ser interpretado por el intérprete de comandos, el nombre del paquete y la versión deben ir entre dobles comillas.
+Note
+The use of double quotes around the package and version specification (i.e. "requests>2.19") is highly recommended to avoid issues with Input and output redirection in Unix-based operating systems.
+The use of ~= is preferred over the == identifier as the latter prevents from updating the packages:
 
 Normalmente, si ya tenemos un módulo instalado y decimos pip install modulo_instalado pues pip no hace nada, aunque haya una versión posterior...
 Si queremos que actualice el paquete si ya lo tuviéramos, habría que decir, suponiendo que lo hacemos para el usuario solo...

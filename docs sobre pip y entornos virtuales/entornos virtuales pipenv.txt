@@ -16,6 +16,13 @@ Hashes are used everywhere, always. Security. Automatically expose security vuln
 Give you insight into your dependency graph (e.g. $ pipenv graph).
 Streamline development workflow by loading .env files.
 
+Además, interesante...
+pipenv install is fully compatible with pip install syntax,
+Por ejemplo podríamos hacer $ pipenv update --outdated
+tb. nos permite recuperar desde un requirements.txt creado con venv
+
+
+
 Para instalar pipenv:
 1º Actualizamos pip por si acaso:
 pip install -U pip --user 
@@ -29,11 +36,19 @@ $ cd ~/Desktop    //   $ mkdir django  //  $ cd django
 
 1º Instalamos los paquetes que necesitamos ... PERO CON LA MISMA APLICACIÓN PIPENV !!!
 $ pipenv install django~=3.1.0
-Simplemente el hecho de invocar el pipenv hace que, si existía ya el entorno, se actualice la información con los nuevos paquetes instalados y quitados o actualizados... y si no existía pues que se cree!!
+Simplemente el hecho de invocar el pipenv hace que, si existía ya el entorno, se actualice la información con los nuevos paquetes instalados y quitados o actualizados... y si no existía pues que se cree!! 
+O sea, This will create a Pipfile if one doesn’t exist. If one does exist, it will automatically be edited with the new package you provided.
 Al terminar de instalar nuetros paquetes... 
 Se habrán creado dos nuevos ficheros en el directorio: Pipfile and Pipfile.lock. Ya temenos todo lo que se necesita para crear el nuevo entorno…
 Cuando activemos el entorno utilizará estos ficheros para configurar el entorno!!
 The Pipfile is used to track which dependencies your project needs in case you need to re-install them, such as when you share your project with others.
+
+MUY IMPORTANTE... si hacemos, simplemente pipenv install
+Lo que hace es crear el entorno, utilizando la info del Pipfile, si lo hubiera
+Si no hubiera Pipfile pero hubiera un requirements.txt (realizado con venv) pues lo utilizaría, 
+y además, crearía el Pipfile, claro!!!
+$ pipenv install
+
 
 2º Activar el entorno!!!
 $ pipenv shell
@@ -52,8 +67,22 @@ Las opciones principales de pipenv son:
 
 pipenv install / pipenv uninstall -> 
 instalan y desinstalan paquetes, y se actualiza en el fichero Pipfile la info del entorno
-Observar que si decimos pipenv install y no damos ningún paquete... lo que se hace es crear un entorno
-y utilizar la info del fichero pipfile (que hemos puesto allí pq hemos generado anteriormente o alguien lo ha pasado) para instalar los módulos y generar el entorno!!
+Observar que si decimos pipenv install y no damos ningún paquete... lo que se hace es crear un entorno y utilizar la info del fichero pipfile (que hemos puesto allí pq hemos generado anteriormente o alguien lo ha pasado) para instalar los módulos y generar el entorno!!
+Además, si tampoco hubiera pipfile previo, se mirará si existe algún requirements.txt creado con venv y se tira de él para crear el entorno!!!!!!
+Recordemos que pipenv install paquete tiene la misma sintaxis que pip install paquete..
+Por ejemplo, sería válido, como en pip...
+pipenv install "requests>=1.4"   # will install a version equal or larger than 1.4.0
+$ pipenv install "requests<=2.13"  # will install a version equal or lower than 2.13.0
+$ pipenv install "requests>2.19"   # will install 2.19.1 but not 2.19.0
+Note
+The use of double quotes around the package and version specification (i.e. "requests>2.19") is highly recommended to avoid issues with Input and output redirection in Unix-based operating systems.
+The use of ~= is preferred over the == identifier as the latter prevents pipenv from updating the packages:
+To avoid installing a specific version you can use the != identifier.
+
+
+$ pipenv update --outdated pues como el pip...
+Want to upgrade everything? Just do $ pipenv update.
+Want to upgrade packages one-at-a-time? $ pipenv update <pkg> for each outdated package.
 
 pipenv lock -> se genera el fichero Pipfile.lock
 
@@ -83,6 +112,17 @@ Resumen: The basic pattern is to install new packages with pipenv, activate them
 Además, si ponemos pipenv -h nos aparece un resumen donde podemos ver todas las opciones
 
 
+¿Cómo hacer para crear un entorno con pipenv si queremos recrear otro creado con venv del que tenemos el requirements.txt?
+If you only have a requirements.txt file available when running pipenv install, pipenv will automatically import the contents of this file and create a Pipfile for you.
+You can also specify $ pipenv install -r path/to/requirements.txt to import a requirements file.
+If your requirements file has version numbers pinned, you’ll likely want to edit the new Pipfile to remove those, and let pipenv keep track of pinning. If you want to keep the pinned versions in your Pipfile.lock for now, run pipenv lock --keep-outdated. Make sure to upgrade soon!
+
+
+
+
+
+
+
 Más...
 Usage
 $ pipenv
@@ -106,6 +146,22 @@ Options:
 Usage Examples:
    Create a new project using Python 3.7, specifically:
    $ pipenv --python 3.7
+   Por ejemplo, en este caso...
+   If a Pipfile hasn’t been created yet, one will be created for you, that looks like this:
+
+[[source]]
+url = "https://pypi.python.org/simple"
+verify_ssl = true
+
+[dev-packages]
+
+[packages]
+
+[requires]
+python_version = "3.7"
+
+Note
+The inclusion of [requires] python_version = "3.7" specifies that your application requires this version of Python, and will be used automatically when running pipenv install against this Pipfile in the future (e.g. on other machines). If this is not true, feel free to simply remove this section.
 
    Remove project virtualenv (inferred from current directory):
    $ pipenv --rm
@@ -175,3 +231,27 @@ $ pipenv shell
 
 
 
+Environment Management with Pipenv
+The three primary commands you’ll use in managing your pipenv environment are $ pipenv install, $ pipenv uninstall, and $ pipenv lock.
+
+$ pipenv install
+$ pipenv install is used for installing packages into the pipenv virtual environment and updating your Pipfile.
+Along with the basic install command, which takes the form:
+$ pipenv install [package names]
+The user can provide these additional parameters:
+--two — Performs the installation in a virtualenv using the system python2 link.
+--three — Performs the installation in a virtualenv using the system python3 link.
+--python — Performs the installation in a virtualenv using the provided Python interpreter.
+--dev — Install both develop and default packages from Pipfile.
+--system — Use the system pip command rather than the one from your virtualenv.
+--deploy — Make sure the packages are properly locked in Pipfile.lock, and abort if the lock file is out-of-date.
+--ignore-pipfile — Ignore the Pipfile and install from the Pipfile.lock.
+--skip-lock — Ignore the Pipfile.lock and install from the Pipfile. In addition, do not write out a Pipfile.lock reflecting changes to the Pipfile.
+
+$ pipenv uninstall
+$ pipenv uninstall supports all of the parameters in pipenv install, as well as two additional options, --all and --all-dev.
+--all — This parameter will purge all files from the virtual environment, but leave the Pipfile untouched.
+--all-dev — This parameter will remove all of the development packages from the virtual environment, and remove them from the Pipfile.
+
+$ pipenv lock
+$ pipenv lock is used to create a Pipfile.lock, which declares all dependencies (and sub-dependencies) of your project, their latest available versions, and the current hashes for the downloaded files. This ensures repeatable, and most importantly deterministic, builds.
