@@ -205,6 +205,14 @@ Los ficheros “Pipfile.lock” y “Pipfile” son los ficheros de requisitos d
 Estos serán muy útiles si en un futuro copiamos/distribuimos la carpeta de nuestro proyecto que contenga estos dos ficheros a cualquier otra máquina (otro ordenador u otro servidor), y si volvemos ejecutamos el comando en esa otra máquina:
 
 pipenv install a secas, al crear el entorno, hace que busque estos ficheros... si los encuentra, pues con eso sería capaza de regenerar todo el entorno con dichos requisitos (con los paquetes instalados, con la versión de Python necesaria, etc.);
+
+Creating a virtualenv for this project...
+Successfully created virtual environment!
+Virtualenv location: C:\Users\Angel Ojeda\.virtualenvs\pandas_dataframe-PLsNn5fQ
+Installing dependencies from Pipfile.lock (d47332)...
+
+
+
 de este modo, nuestro proyecto funcionará perfectamente en esa otra máquina.
 A último remedio, pipenv install, si no existe previamente el entorno, si tampoco existen Pipfile y Pipfile.lock, pero sí existe un requirements.txt creado pues se tirará de ese fichero para crear el entorno con los paquetes de requirements.txt
 
