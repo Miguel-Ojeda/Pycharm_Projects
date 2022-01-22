@@ -34,6 +34,21 @@ print(df.city)  # sólo válido si la col. tiene nombre de identificador válido
 107          Osaka
 Name: city, dtype: object'''
 
+# También podemos obtener un dataframe con varios columnas del original..
+# Esto es muy potente ya...
+sub_data_frame = df[['name', 'age']]
+print('Sub data frame -->')
+print(sub_data_frame)
+'''
+       name  age
+101  Xavier   41
+102     Ann   28
+103    Jana   33
+104      Yi   34
+105   Robin   38
+106    Amal   31
+107    Nori   37
+'''
 
 # Acceso a rows con el accesor .loc[label_name de la fila en el index]
 print(df.loc[105])  # Loc nos devuelve tb un objeto Series
