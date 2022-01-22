@@ -149,3 +149,16 @@ pd_4d = pd.DataFrame(array_4c, columns=('xx', 'yy', 'ZZ'), copy=True)
 # F1: gran diccionario; cada value va a ser una lista con los valores de cada columna
 # F2: gran diccioanrio; cada value va a ser un elemento (lista, array, ..) con los valores de cada columna
 # F3: un lista de diccioanrios, un diccioanrio por cada columna.... las keys de los diccionarios van a ser las columnas
+
+
+# Otra forma que vi... creando Series objects...
+s1 = pd.Series([5, 6, 7])
+s2 = pd.Series([7, 8, 9])
+
+df_xb = pd.DataFrame([list(s1), list(s2)],  columns=["A", "B", "C"], index=['row_1', 'row_2'])
+print(df_xb)
+'''
+       A  B  C
+row_1  5  6  7
+row_2  7  8  9
+'''
