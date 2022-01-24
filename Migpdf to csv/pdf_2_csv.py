@@ -1,5 +1,5 @@
 # Módulos....
-import tabula  # Hace la extracción de datos utilziando tabula Java
+import tabula  # Hace la extracción de datos utilizando tabula Java
 from pathlib import Path  # Objetos Path
 import PySimpleGUI as sg  # Salida gráfica
 import time
@@ -89,7 +89,7 @@ for _, pdf_file in enumerate(path_base.glob('*.[pP][dD][fF]')):
 
     # Habría que pasar a la función get_clean.-... el centro y las observaciones detectadas...
     # datos_centro va a ser el data frame con los datos ya arreglados...
-    # de momento le pasamos como centro el nombre del fichero, y nada en observacioens
+    # de momento le pasamos como centro el nombre del fichero, y nada en observations
     datos_centro = get_clean_hlc_df(lista_df, centro=nombre_del_fichero, observaciones=None)
     datos_centro.to_csv(csv_file, header=False, index=False)
 
@@ -113,4 +113,3 @@ tabula.convert_into(input_path=pdf_file, output_path=str(csv_file),
 
 window.close()
 sg.popup('Proceso terminado')
-
