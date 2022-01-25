@@ -22,7 +22,7 @@ DATA = defaultdict(set)
 # creamos el diccionario con los datos,
 # para clave no existente cuando haga falta se iniciará con el conjunto vacío
 
-with open('mini-access-log.txt') as log:
+with open('files/mini-access-log.txt') as log:
     for line in log:
         espacio = line.find(' ')
         comillas_esp = line.find('" ')

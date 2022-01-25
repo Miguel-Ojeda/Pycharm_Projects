@@ -15,7 +15,7 @@ def analiza_log_ip(filename):
     return DATA
 
 
-DATA = analiza_log_ip('mini-access-log.txt')
+DATA = analiza_log_ip('files/mini-access-log.txt')
 # Comprobación
 for codigo, IPs in DATA.items():
     print(f'\nPara el código {codigo}, las ips grabadas han sido, sin repetir...\n')
