@@ -57,7 +57,7 @@ try:
     # Si estamos aquí, es que todo_ ha ido bien... o sea, tenemos ya TODO_ EL CONTENIDO SOLICITADO
     # Ahora, lo vamos a ir leyendo (ya está en nuestro ordenador, en response) con un iterador
     # e ir copiando a un fichero del disco duro!!!
-    with open('Romeo_y_julieta.txt', 'wb') as fichero:
+    with open('files/Romeo_y_julieta.txt', 'wb') as fichero:
         # chunk = response.iter_lines()
         # Usaremos iterador más rápido... leeremos y escribiremos al fichero de 100_000 en 100_000
         for chunk in response.iter_content(100_000):
@@ -75,7 +75,7 @@ response = requests.get('https://www.marca.com')
 try:
     response.raise_for_status()
     print('Fue bien el raise!!')
-    with open('marca.html', 'wb') as fichero:
+    with open('files/marca.html', 'wb') as fichero:
         for chunk in response.iter_content(100_000):
             fichero.write(chunk)
         # OJo... si hacemos simplemente fichero.write(response.txt) da error pq es demasiado grande!!!
