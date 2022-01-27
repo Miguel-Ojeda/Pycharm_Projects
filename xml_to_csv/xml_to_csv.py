@@ -28,9 +28,13 @@ def extract_hlc_from_xml(file_path):
     '''
     <NombreCentro>SANTA LUCÍA DE TIRAJANA</NombreCentro>
     '''
+    '''
     seleccion = soup.select('NombreCentro')
     # datos_hlc['centro'] = seleccion[0].getText()
     datos_hlc.append(seleccion[0].getText())
+    '''
+    datos_hlc.append(soup.NombreCentro.string)
+
 
     # Extraemos el mes
     '''
@@ -38,10 +42,14 @@ def extract_hlc_from_xml(file_path):
     Certificación mensual de HLC para Educación de Personas Adultas - Noviembre 2021
     </NombreCertificacion>
     '''
+    '''
     seleccion = soup.select('NombreCertificacion')
     texto = seleccion[0].getText().split('- ')[-1]
     # datos_hlc['mes'] = texto
     datos_hlc.append(texto)
+    '''
+    mes = soup.NombreCertificacion.string.split('- ')[-1]
+    datos_hlc.append(mes)
 
     # Profesores (de momento DNI y totales)
     '''
@@ -65,12 +73,25 @@ def extract_hlc_from_xml(file_path):
     #         pass
 
     for profesor in seleccion:
+        '''
+        # Opción con get....
         NIFNIE = profesor.get('NIFNIE')
         apellido_1 = profesor.get('Apellido1')
         apellido_2 = profesor.get('Apellido2')
         nombre = profesor.get('Nombre')
         total_hlc = int(profesor.get('TotalHLC')) / float(60)           # Los datos están en minutos... pasar a horas
         total_hlc_10 = int(profesor.get('TotalHLC10')) / float(60)      # Los datos están en minutos... pasar a horas
+        '''
+
+        # Opción tipo diccionario... equivalente a la anterior
+        NIFNIE = profesor['NIFNIE']
+        apellido_1 = profesor['Apellido1']
+        apellido_2 = profesor['Apellido2']
+        nombre = profesor['Nombre']
+        total_hlc = int(profesor['TotalHLC']) / float(60)  # Los datos están en minutos... pasar a horas
+        total_hlc_10 = int(profesor['TotalHLC10']) / float(60)  # Los datos están en minutos... pasar a horas
+
+
 
         '''
             <DesgloseHLC>
