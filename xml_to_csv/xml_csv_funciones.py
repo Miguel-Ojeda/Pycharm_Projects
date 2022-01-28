@@ -11,8 +11,12 @@ def hlc_data_to_csv(datos, file_csv):
         # Si el diccionario / fila, contiene alguna key que no está en columnas... malo....
         # por eso ponemos raise como extras action, para que si hay alguna key extra,
         # aparte de las de las columnas, que se arroje una excepción...
-        writer = csv.DictWriter(csvfile, fieldnames=COLUMNAS, restval=None, extrasaction='raise')
-        writer.writeheader()
+        # También importante QUOTE_NON... para que los numéricos los ponga como float!!
+        writer = csv.DictWriter(csvfile, fieldnames=COLUMNAS,
+                                # dialect='excel',
+                                # quoting=csv.QUOTE_NONE, escapechar='\\',
+                                restval=None, extrasaction='raise')
+        # writer.writeheader()  # No hace falta, las columnas están justo antes de los profes!!!
         writer.writerows(datos)
 
 
@@ -66,6 +70,13 @@ def extract_hlc_from_xml(file_path):
 
 
     # Ahora toca seleccionar a los docentes...
+    # Justo encima colocamos los campos para que se vean...
+    fila_con_nombres_columnas = {}
+    for columna in COLUMNAS:
+        fila_con_nombres_columnas[columna] = columna
+    datos_hlc.append(fila_con_nombres_columnas)
+    # Esto sería ... {'NIFNIE': 'NIFNIE', etc...}
+
     '''
     <Docente NIFNIE="54074889A" Apellido1="Alemán" Apellido2="Vega" Nombre="Nicolasa" TotalHLC="1440" TotalHLC10="1560">
     '''
@@ -73,10 +84,10 @@ def extract_hlc_from_xml(file_path):
 
     for profesor in profesores:
 
-        # Para extraer el valor de atributos lo podemos hacer de dos formas...
+        # Para extraer el horas de atributos lo podemos hacer de dos formas...
         # Como si fuera un diccionario: --> profesor['NIFNIE']
         # Con el método get: --> profesor.get('NIFNIE')
-        # No sé si es mejor una u otra... el get no de errar si no existiera el valor, sino que retorna None
+        # No sé si es mejor una u otra... el get no de errar si no existiera el horas, sino que retorna None
 
         # Para cada profesor habrá una línea, que será un diccionario con los campos apropiados
         # Iniciamos una fila vacía para el profesor...
@@ -91,8 +102,20 @@ def extract_hlc_from_xml(file_path):
 
         # Los datos de tiempo están en minutos... dividir entre 60
         # No aparece el 10 % suelto, sino ya sumado en Total HLC + 10 %
-        datos_profesor['TotalHLC'] = int(profesor['TotalHLC']) / float(60)
-        datos_profesor['TotalHLC10'] = int(profesor['TotalHLC10']) / float(60)
+
+        # datos_profesor['TotalHLC'] = int(profesor['TotalHLC']) / 60.
+        # datos_profesor['TotalHLC10'] = int(profesor['TotalHLC10']) / 60.
+        # No sé porqué, pero si lo paso a float no sirve, luego los números en el csv los trata como texto
+        # datos_profesor['TotalHLC'] = profesor['TotalHLC']   # dejar minutos
+        # datos_profesor['TotalHLC10'] = profesor['TotalHLC10']  # dejar minutos
+
+
+        # Pruebas de nuevo a ver si arreglo lo de la coma
+        # Parece que es porque en el csv los decimales se escriben con una COMA!!  ¿?
+        horas = str(int(profesor['TotalHLC']) / 60.0).replace('.', ',')
+        datos_profesor['TotalHLC'] = horas
+        horas = str(int(profesor['TotalHLC10']) / 60.0).replace('.', ',')
+        datos_profesor['TotalHLC10'] = horas
 
         '''
             <DesgloseHLC>
@@ -105,8 +128,13 @@ def extract_hlc_from_xml(file_path):
             # Si es un tag pues sacamos los datos (si es texto pues nada)
             if isinstance(child, bs4.element.Tag):
                 atributos = child.attrs
-                # El valor asociado al atributo 'Codigo' nos va a indica el tipo de hora (BPA, etc)
-                datos_profesor[atributos['Codigo']] = int(atributos['Minutos']) / float(60)
+                # El horas asociado al atributo 'Codigo' nos va a indica el tipo de hora (BPA, etc)
+                # datos_profesor[atributos['Codigo']] = int(atributos['Minutos']) / 60.
+                # No sé porqué, pero al dividir y tener decimales el csv no los considera números
+                # datos_profesor[atributos['Codigo']] = atributos['Minutos']
+                horas = str(int(atributos['Minutos']) / 60.).replace('.', ',')
+                datos_profesor[atributos['Codigo']] = horas
+
 
         # Pues ya tenemos la fila con todos los datos del profe... la añadimos a la lista de datos...
         datos_hlc.append(datos_profesor)
