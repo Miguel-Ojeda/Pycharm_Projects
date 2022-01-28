@@ -1,78 +1,69 @@
 import bs4  # Beautiful Soup para el análisis de xml, html, ...
-# lxml tb tiene que estar instalado
 from pathlib import Path
 import pprint
+import csv
 
+# lxml tb tiene que estar instalado
+# pysimplegui tiene que estar instalado
 
 
 def extract_hlc_from_xml(file_path):
-    # datos_hlc = dict()
+    # Los datos del centro se van a guardar en una lista
+    # Cada ítem de la lista va a ser un diccionario, cuyas claves son las columnas, que tendrán los repectivos valores
     datos_hlc = []
-    # quizás mejor una nt para q esté ordenado como yo quiera'?
 
+    # Cada fila será un diccionario... cuyos keys representan las siguietnes columnas...
+    columnas = ['NIFNIE', 'Nombre', 'FBPA', 'BPA', 'ID', 'PPGES', 'PPAC2/PPAC3',
+                'PPAU', 'CE2', 'MENTOR', 'INFB', 'FPS', 'TotalHLC', 'TotalHLC10']
+    fila_vacia = {}
 
-
+    # Abrimos el fichero para crear la sopa
     with open(file_path, encoding='UTF-8') as file:
         soup = bs4.BeautifulSoup(file, 'xml')
 
 
-    # file = open(file_path, 'r', encoding="UTF-8")
-    # contenido = file.read()
-    # file.close()
-    # # print(contenido)
+    # Para separar a cada centro del resto, pues añadimos primero una fila en blanco a los datos...
+    datos_hlc.append({})   # Diccionario en blanco
 
-
-    # soup = bs4.BeautifulSoup(contenido, parser='lxml', features='lxml')
-
-    # Extraemos el nombre del centro
+    # Extraemos el nombre del centro, el código,  el mes, y
+    # lo ponemos todo_ junto, en la columna apellidos nombre (la más ancha)
     '''
     <NombreCentro>SANTA LUCÍA DE TIRAJANA</NombreCentro>
     '''
-    '''
-    seleccion = soup.select('NombreCentro')
-    # datos_hlc['centro'] = seleccion[0].getText()
-    datos_hlc.append(seleccion[0].getText())
-    '''
-    datos_hlc.append(soup.NombreCentro.string)
+    nombre_centro = soup.NombreCentro.string
 
+    '''
+    <CodigoCentro>38011111</CodigoCentro>
+    '''
+    codigo_centro = soup.CodigoCentro.string
 
-    # Extraemos el mes
     '''
-    <NombreCertificacion>
-    Certificación mensual de HLC para Educación de Personas Adultas - Noviembre 2021
-    </NombreCertificacion>
-    '''
-    '''
-    seleccion = soup.select('NombreCertificacion')
-    texto = seleccion[0].getText().split('- ')[-1]
-    # datos_hlc['mes'] = texto
-    datos_hlc.append(texto)
+        <NombreCertificacion>
+        Certificación mensual de HLC para Educación de Personas Adultas - Noviembre 2021
+        </NombreCertificacion>
     '''
     mes = soup.NombreCertificacion.string.split('- ')[-1]
-    datos_hlc.append(mes)
+    nombre_centro_mes = nombre_centro + ' (' + codigo_centro + ') ' + mes
 
-    # Profesores (de momento DNI y totales)
+    # grabamos ahora el nombre_mes en una fila (o sea, como un diccionario), eligiendo la columna (key) 'Nombre'
+    datos_hlc.append({'Nombre': nombre_centro_mes})
+
+    # dejamos una línea de separación, y luego colocamos las observaciones, (en la columna Nombre)
+    # y colocamos dos líneas más de separación
+    datos_hlc.append({})
+    observaciones = soup.Observaciones.get_text().replace('\n', ' - ')  # Quitamos saltos de línea
+    datos_hlc.append({'Nombre': observaciones})
+    datos_hlc.append({})
+    datos_hlc.append({})
+
+
     '''
     <Docente NIFNIE="54074889A" Apellido1="Alemán" Apellido2="Vega" Nombre="Nicolasa" TotalHLC="1440" TotalHLC10="1560">
     '''
-    seleccion = soup.select('Docente')
+    # Seleccionamos todos los docentes...
+    profesores = soup.select('Docente')
 
-
-    # profe = seleccion[-1]
-    # horas_profe = dict()
-    # print(type(profe))
-    # # print(profe.name)
-    # # print(profe.contents)
-    # for i, child in enumerate(profe.DesgloseHLC):
-    #     try:
-    #         print(i, child, type(child), child.name, child.attrs)
-    #         atributos = child.attrs
-    #         horas_profe[atributos['Codigo']] = atributos['Minutos']
-    #
-    #     except:
-    #         pass
-
-    for profesor in seleccion:
+    for profesor in profesores:
         '''
         # Opción con get....
         NIFNIE = profesor.get('NIFNIE')
@@ -82,39 +73,55 @@ def extract_hlc_from_xml(file_path):
         total_hlc = int(profesor.get('TotalHLC')) / float(60)           # Los datos están en minutos... pasar a horas
         total_hlc_10 = int(profesor.get('TotalHLC10')) / float(60)      # Los datos están en minutos... pasar a horas
         '''
-
-        # Opción tipo diccionario... equivalente a la anterior
-        NIFNIE = profesor['NIFNIE']
+        # Para cada profesor habrá una línea, que será un diccionario con los campos apropiados
+        datos_profesor = {}  # Iniciamos una fila vacía para el profesor...
+        # Extraemos DNI, NOmbre y apellidos, el total de hlc y con el 10 %
+        datos_profesor['NIFNIE'] = profesor['NIFNIE']
         apellido_1 = profesor['Apellido1']
         apellido_2 = profesor['Apellido2']
         nombre = profesor['Nombre']
-        total_hlc = int(profesor['TotalHLC']) / float(60)  # Los datos están en minutos... pasar a horas
-        total_hlc_10 = int(profesor['TotalHLC10']) / float(60)  # Los datos están en minutos... pasar a horas
-
-
+        datos_profesor['Nombre'] = ' '.join([apellido_1, apellido_2 + ',', nombre])
+        # Los datos de tiempo están en minutos... dividir entre 60
+        datos_profesor['TotalHLC'] = int(profesor['TotalHLC']) / float(60)
+        datos_profesor['TotalHLC10'] = int(profesor['TotalHLC10']) / float(60)
 
         '''
             <DesgloseHLC>
             <Agrupacion Codigo="BPA" Denominacion="Bachillerato de Personas Adultas" Minutos="1440" />
           </DesgloseHLC>
         '''
-        horas_profe = {}
+        # horas_profe = {}
         for child in profesor.DesgloseHLC:
-            try:
+            # Si es un tag pues sacamos los datos (si es texto pues nada)
+            if isinstance(child, bs4.element.Tag):
                 atributos = child.attrs
-                horas_profe[atributos['Codigo']] = int(atributos['Minutos']) / float(60)
-            except:
-                pass
+                datos_profesor[atributos['Codigo']] = int(atributos['Minutos']) / float(60)
 
-        tupla_profe = (NIFNIE, apellido_1, apellido_2, nombre, total_hlc, total_hlc_10, horas_profe)
-        datos_hlc.append(tupla_profe)
+        # tupla_profe = (NIFNIE, apellido_1, apellido_2, nombre, total_hlc, total_hlc_10, horas_profe)
+        datos_hlc.append(datos_profesor)
+
+    # Añadimos una fila en blanco y otra con asteriscos en la columna de DNI y Nombre...
+    datos_hlc.append({})
+    datos_hlc.append({'NIFNIE': '********', 'Nombre': '********************'})
+    datos_hlc.append({})
+
+    # Guardamos un csv!!!
+    file_csv = file_path[:-3] + 'csv'
+    # csv.DictWriter(f, fieldnames, restval='', extrasaction='raise', dialect='excel', *args, **kwds)¶
+    with open(file_csv, 'w', newline='', encoding='utf-8') as csvfile:
+        # Si el diccionario / fila, contiene alguna key que no está en columnas... malo....
+        # por eso ponemos raise como extras action, para que si hay alguna key extra, aparte de las de las columnas
+        # que se arroje una excepción...
+        writer = csv.DictWriter(csvfile, fieldnames=columnas, restval=None, extrasaction='raise')
+        writer.writeheader()
+        writer.writerows(datos_hlc)
 
     return datos_hlc
 
 
-xml_path = 'C:/Users/Angel Ojeda/Documents/Miguel/xml/sl.xml'
+# xml_path = 'C:/Users/Angel Ojeda/Documents/Miguel/xml/sl.xml'
+xml_path = 'D:/Documentos/XML noviembre/Santa Lucia de Tirajana.xml'
 datos_hlc = extract_hlc_from_xml(xml_path)
-
 for item in datos_hlc:
     print(item)
-
+# pprint.pprint(datos_hlc)
