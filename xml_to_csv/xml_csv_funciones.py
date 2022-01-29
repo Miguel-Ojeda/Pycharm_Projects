@@ -5,6 +5,8 @@ import bs4
 COLUMNAS = ['NIFNIE', 'Nombre', 'FBPA', 'BPA', 'ID', 'PPGES', 'PPAC2/PPAC3',
             'PPAU', 'CE2', 'MENTOR', 'INFB', 'FPS', 'Redondeo', 'TotalHLC10']
 
+MAX_LONGITUD_OBS = 60  # Máxima longitud para cada línea de observaciones... si fuera mayor se dividirá
+
 def hlc_data_to_csv(datos, file_csv):
 
     with open(file_csv, 'w', newline='', encoding='utf-8') as csvfile:
@@ -67,8 +69,24 @@ def extract_hlc_from_xml(file_path):
     observaciones = soup.Observaciones.get_text().splitlines()
     # Añadimos una línea por cada línea de las observaciones...
     for observacion in observaciones:
-        if observacion:
+        if not observacion:  # Si la cadena es vacía... pues nada, continuar con otra...
+            continue
+        if len(observacion) <= MAX_LONGITUD_OBS:
+            # Bien, cabe todo_ en una línea
             datos_hlc.append({'Nombre': observacion})
+            continue
+        # Aquí estamos, la cadena es muy larga... la dividimos en palabras...
+        palabras = observacion.split()
+        nueva_observacion = ''
+        for palabra in palabras:
+            posible_nueva_observacion = ' '.join([nueva_observacion, palabra])
+            if len(posible_nueva_observacion) <= MAX_LONGITUD_OBS:
+                nueva_observacion = posible_nueva_observacion
+            else:
+                datos_hlc.append({'Nombre': nueva_observacion})
+                nueva_observacion = palabra
+        datos_hlc.append({'Nombre': nueva_observacion})
+
 
     datos_hlc.append({})
     datos_hlc.append({})
