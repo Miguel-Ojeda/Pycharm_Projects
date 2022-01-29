@@ -3,7 +3,7 @@ import bs4
 # ---> Para usar el parser xml del beautiful soup tiene que estar instalado el módulo lxml
 
 COLUMNAS = ['NIFNIE', 'Nombre', 'FBPA', 'BPA', 'ID', 'PPGES', 'PPAC2/PPAC3',
-            'PPAU', 'CE2', 'MENTOR', 'INFB', 'FPS', 'TotalHLC', 'TotalHLC10']
+            'PPAU', 'CE2', 'MENTOR', 'INFB', 'FPS', 'Redondeo', 'TotalHLC10']
 
 def hlc_data_to_csv(datos, file_csv):
 
@@ -63,8 +63,13 @@ def extract_hlc_from_xml(file_path):
     # dejamos una línea de separación, y luego colocamos las observaciones, (en la columna Nombre)
     # y colocamos dos líneas más de separación
     datos_hlc.append({})
-    observaciones = soup.Observaciones.get_text().replace('\n', ' - ')  # Quitamos saltos de línea
-    datos_hlc.append({'Nombre': observaciones})
+    # observaciones = soup.Observaciones.get_text().replace('\n', ' - ')
+    observaciones = soup.Observaciones.get_text().splitlines()
+    # Añadimos una línea por cada línea de las observaciones...
+    for observacion in observaciones:
+        if observacion:
+            datos_hlc.append({'Nombre': observacion})
+
     datos_hlc.append({})
     datos_hlc.append({})
 
@@ -101,21 +106,13 @@ def extract_hlc_from_xml(file_path):
         datos_profesor['Nombre'] = ' '.join([apellido_1, apellido_2 + ',', nombre])
 
         # Los datos de tiempo están en minutos... dividir entre 60
-        # No aparece el 10 % suelto, sino ya sumado en Total HLC + 10 %
-
-        # datos_profesor['TotalHLC'] = int(profesor['TotalHLC']) / 60.
-        # datos_profesor['TotalHLC10'] = int(profesor['TotalHLC10']) / 60.
-        # No sé porqué, pero si lo paso a float no sirve, luego los números en el csv los trata como texto
-        # datos_profesor['TotalHLC'] = profesor['TotalHLC']   # dejar minutos
-        # datos_profesor['TotalHLC10'] = profesor['TotalHLC10']  # dejar minutos
-
-
-        # Pruebas de nuevo a ver si arreglo lo de la coma
-        # Parece que es porque en el csv los decimales se escriben con una COMA!!  ¿?
-        horas = str(int(profesor['TotalHLC']) / 60.0).replace('.', ',')
-        datos_profesor['TotalHLC'] = horas
-        horas = str(int(profesor['TotalHLC10']) / 60.0).replace('.', ',')
-        datos_profesor['TotalHLC10'] = horas
+        total_hlc = int(profesor['TotalHLC']) / 60.0
+        total_hlc_con_10 = int(profesor['TotalHLC10']) / 60.0
+        # Calculamos el redondeo restando; El redondeo siempre es número entero
+        # Lo convertimos entonces a entero ya y así no tenemos que cambiar luego el punto decimal por una coma
+        datos_profesor['Redondeo'] = int(total_hlc_con_10 - total_hlc)
+        # Para que el csv nos reconozca datos como números, la coma tiene que aparecer como 5,0. No vale 5.0
+        datos_profesor['TotalHLC10'] = str(total_hlc_con_10).replace('.', ',')
 
         '''
             <DesgloseHLC>
@@ -139,9 +136,13 @@ def extract_hlc_from_xml(file_path):
         # Pues ya tenemos la fila con todos los datos del profe... la añadimos a la lista de datos...
         datos_hlc.append(datos_profesor)
 
-    # Añadimos una fila en blanco y otra con asteriscos en la columna de DNI y Nombre... para separar centros
+    # Añadimos una fila en blanco y otra con --- para separar centros
     datos_hlc.append({})
-    datos_hlc.append({'NIFNIE': '********', 'Nombre': '********************'})
+    # Añadimos la línea de -----
+    linea_separadora = {key:'---' for key in COLUMNAS}
+    linea_separadora['NIFNIE'] = 16 * '-'
+    linea_separadora['Nombre'] = 80 * '-'
+    datos_hlc.append(linea_separadora)
     datos_hlc.append({})
 
 
