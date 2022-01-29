@@ -1,10 +1,12 @@
 from pathlib import Path
 import time
 from xml_csv_funciones import hlc_data_to_csv, extract_hlc_from_xml
+from io_ventanas import elige_carpeta, muestra_mensaje
 
 
-# Probamos con un fichero
+
 '''
+# Probamos con un fichero
 xml_file = 'D:/Documentos/XML noviembre/Santa Lucia de Tirajana.xml'
 csv_file = 'D:/Documentos/XML noviembre/Santa Lucia de Tirajana.csv'
 
@@ -12,11 +14,11 @@ csv_file = 'D:/Documentos/XML noviembre/Santa Lucia de Tirajana.csv'
 datos_hlc = extract_hlc_from_xml(xml_file)
 for item in datos_hlc:
     print(item)
-
 hlc_data_to_csv(datos_hlc, csv_file)
 '''
 
-xml_dir = Path('D:/Documentos/XML noviembre')
+# xml_dir = Path('D:/Documentos/XML noviembre')
+xml_dir = Path(elige_carpeta('Elija la carpeta donde están los datos de HLC'))
 
 # Creamos el subdirectorio para los ficheros CSV, basándonos en la fecha y hora actual
 str_time = time.strftime('%y%m%d-%H%M%S')
@@ -41,4 +43,7 @@ for contador, xml_file in enumerate(xml_dir.glob('*.[xX][mM][lL]')):
 # Creamos un CSV con todo_ junto
 csv_file = csv_dir / 'todos_los_centros.csv'
 hlc_data_to_csv(datos_todos_los_centros, csv_file)
+
+# Salimos
+muestra_mensaje('Proceso terminado')
 
