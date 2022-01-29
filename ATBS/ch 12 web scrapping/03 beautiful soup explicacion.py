@@ -54,7 +54,7 @@ Elementos con el nombre dato, que incluyan el atributo dado entre corchetes
 soup.select('input[name]')  --> All elements named <input> that have a name attribute with any value
 
 Elementos con el nombre dado, que incluyan el atributo dato, con el valor dado
-soup.select('input[type="button"]')  --> All elements named <input> that have an attribute named type with value button
+soup.select('input[type]="button"]')  --> All elements named <input> that have an attribute named type with value button
 '''
 
 
