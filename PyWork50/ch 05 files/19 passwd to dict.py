@@ -29,12 +29,23 @@ def passwd_to_dict(filename):
     name_id = {}
     with open(filename) as file:
         for linea in file:
+            '''
+            Reuven se ahorra el strip()
+            Simplemente utiliza if not line.startswith(('#', '\n')) 
+            Lo malo que esto sólo sirve para líneas en blanco, no si tiene espacios
+            '''
             linea = linea.strip()
             if linea.startswith('#') or linea == '':
                 continue
-            # print('tenemos línea con datos')
             user_info = linea.split(':')
             name_id[user_info[0]] = user_info[2]
+            '''
+            Otra opción que vi en Reuven es aprovechar ya con el split, y asignar variables...
+            user_name, *ignore, user_id = linea.split(':')
+            # *ignore aquí significa lista con los otros campos, que no nos interesan, 
+            # para no poner los otros 6 campos, ponemos *, para indicar que es una lista con lo otro..
+            name_ide[user_name] = user_id
+            '''
 
     return name_id
 

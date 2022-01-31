@@ -90,3 +90,30 @@ with ManagedFile('hello.txt') as f:
 # This can make your life a little easier if your use cases match what’s offered by contextlib.
 # Ejemplo:
 # Ver ejemplo en el libro Python tricks The book (es un ejemplo que usa generators y no lo entiendo)
+
+
+# Notas de Reuven en 50 Python Workouts
+'''
+The basic idea is as follows:
+1 You use with, along with an object and a variable to which you want to assign the object.
+2 The object should know how to behave inside of the context manager.
+3 When the block starts, with turns to the object.
+If a __enter__ method is defined on the object, then it runs.
+In the case of files, the method is defined but does nothing other than return the file object itself.
+Whatever this method returns is assigned to the as variable at the end of the with line.
+4 When the block ends, with once again turns to the object, executing its __exit__ method.
+This method gives the object a chance to change or restore whatever state it was using.
+
+It’s pretty obvious, then, how with works with files.
+Perhaps the __enter__ method isn’t important and doesn’t do much,
+but the __exit__ method certainly is important and does a lot—specifically in flushing and closing the file.
+If you pass two or more objects to with, the __enter__ and __exit__ methods are invoked on each of them, in turn
+
+Two other common cases are:
+(1) when processing database transactions and
+(2) when locking certain sections in multi-threaded code.
+
+In both situations, you want to have a section of code that’s executed within a certain context—and thus,
+Python’s context management, via with, comes to the rescue.
+'''
+
