@@ -2,8 +2,7 @@ from pathlib import Path
 import time
 from xml_csv_funciones import hlc_data_to_csv, extract_hlc_from_xml
 from io_ventanas import elige_carpeta, muestra_mensaje
-
-
+from subprocess import Popen
 
 '''
 # Probamos con un fichero
@@ -46,4 +45,5 @@ hlc_data_to_csv(datos_todos_los_centros, csv_file)
 
 # Salimos
 muestra_mensaje('Proceso terminado')
+Popen(f'C:/Windows/explorer.exe {csv_dir}')
 
