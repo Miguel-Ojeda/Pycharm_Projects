@@ -1,3 +1,8 @@
+'''
+Leer antes lo de iterators!!!
+'''
+
+
 """
 Esto va después de leer lo de iterators...
 The book of Python tricks... 6.5 Generators Are Simplified Iterators
@@ -131,3 +136,8 @@ def bounded_repeater(value, max_repeats):
 
 # Todo es muchísimo más sencillo que con iteradores1!!  (la versión con iteradores era de 12 líneas , ahora 3!!)
 
+# O sea, como vemos iterator son class based, mientras que los generadores son más sencillos, son parecido
+# a funciones....y mucho más sencillos, no tenemos que hacer un método __iter__ ni un método __next__
+
+
+# Pero se puede hacer más sencillo... con generator expressiones
