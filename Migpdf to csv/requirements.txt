@@ -1,4 +1,0 @@
-pandas
-PySimpleGUI
-tabula-py
-openpyxl

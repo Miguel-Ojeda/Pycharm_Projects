@@ -1,2 +1,0 @@
-Hola voy a escribir este texto al fichero al que apunta el objeto path
-Aquí la línea final
