@@ -1,0 +1,2570 @@
+Comandos básicos GIT
+
+#Estructuras en GIT
+Dentro del directorio .git van estas dos estructuras...
+1) OBJECT STORE (almacén de objetos)
+Contiene los ficheros de datos originales, todos los logs, información de autoría, fechas, y todo lo requerido para poder reconstruir cualquier rama o versión que hayamos creado en cualquier momento en el repo... Contiene todos los elementos necesarios!!
+
+En el almacén tenemos 4 tipos de objetos:
+a)Blobs: cada versión de fichero que haya existido va a estar representada como un blob (binary large object). Es opaco, en el sentido de que tiene todo el dato del fichero, pero carece de cualquier metadato del mismo (nombre de fichero, tamaño, autor, etc; nada, solo la información).
+
+b)Trees (estructuras de árbol): cada árbol representa un nivel de información de directorio. COntiene todos los paths de los ficheros que contiene, los blobs que corresponden a esos ficheros, metadatos de esos ficheros/blobs,... Además, recursivamente, contiene las referencias de los otros subárboles que penden de él... Así es posible, si empezamos por el árbole princiapl, poder recrear toda la estructura que el repo tenía en cualquier momento...
+
+c)Commits: contiene los metadatas acerca de cada cambio introducido en el repositorio, incluyendo autoría, fecha, mensaje de log, ... cada commit apuntará tb a un objeto tipo árbol principal que describe el estado del repo en el momento de ese commit. 
+Además, todos los commits, menos el inicial, tienen un commit padre (o varios!!!). Así será posible movernos de un commit al anterior, etc...
+
+d)Tags (etiquetas): sirven para asignar un nombre a un commit (en vez de utilziar su código hash de 40 dígitos hexadecimales (160 bits = 20 bytes)
+
+Para que todo esto sea eficiente, Git comprime y alamcena estos objetos en paquetes, que también van colocados en el almacén...
+
+Este almacén es "addressable", o sea, podemos apuntar a objetos para recuperar información. Esto se consigue pq cada objeto tiene un nombre único, formado por el SHA1 value de los contenidos de ese objeto. O sea, este código hash va a servir de objecto ID. Observar que para generar el Hash sólo importa su contenido (no los metadatos, como nombre, autoría, fecha...)
+
+Importante: este código hash va a ser idéntico si el objecto es el mismo, da igual la máquina, etc. Esto nos sirve para comparar blobs: si dos blobs tienen el mismo hash, es que son el mismo objeto.
+
+Git coloca todos estos objetos ordenados según su hash, para poder localizarlos fácilmente luego. O sea, no los coloca según en qué directorio estaban ni nada, sino ordena los objetos por su hash. GIT TRACKEA OBJETOS, NO FICHEROS (no paths, tamaños, nombres...).
+
+Otro ejemplo: si dos ficheros separados tienen exactamente el mismo contenido, pq están repetidos en el repo, git genera el blob del primero de ellos, y lo guarda el sitio adecuado según HASH. Al generar el segundo objeto, como el hash le sale el mismo pues ya lo tiene... SOLO SE GENERA UN OBJETO PARA GUARDAR EN EL ALMACËN!!! Otra cosa es que ese objeto luego estará referenciado luego en dos árboles...
+
+Además, GIT va a guardar en el almacén todas las versiones de cada fichero (no las diferencias entre versiones, como otros sistemas de control de versiones). A nosotros nos puede decir las diferencias entre las versiones, pero realmente las está calculando sobre la marcha, pq realmente guarda los objetos enteros (no guarda las diferencias, sino los objetos).
+
+Además, Git trata el nombre de un fichero como información que es distinta de su contenido... el contenido va a un blob que identificamos con un id... la información sobre nombres etc... va en otro objeto de tipo árbol... que a su vez identificamos con su hash...
+
+Además la estructura del git no tiene nada que ver con la estrucutra en directorios del repo... es simplemente un almacén de objetos (de varios tipos) ordenados por su hash para ubicarlos fácilmente...
+
+Cuando git necesita crear el working directory simplemente coge cada objeto y la manda al sistema de ficheros el pathname (que saca del objeto tree) y le dice al sistema operativo que haga lo que tenga que hacer con eso...
+
+Aunque git guarda cada versión de cada fichero, lo hace inteligentemente... COn un pack file, si dos ficheros son muy parecidos (aunque sean de distinto nombre, da igual) git almacena un objeto completo, y leugo computa las diferencias y almacena el delta... y almacena todo en un pack: el objeto original y los deltas que ayudan a formar otras versiones...
+Además, en el paquete se guarda, junto con el blob original y los deltas de los objetos derivados, también el hash que sirve para identificar cada uno de los objetos..
+Por ejemmplo, en un paquete podemos tener 3 objetos: blob original, delta para crear objeto 2, delta para crear blob 3, hash objeto original, hash objeto 2, hash objeto 3.
+
+Observar que busca candidatos entre todos los ficheros, de cualquier lugar del repo... no tiene que ser el mismo fichero que va cambiando...
+
+Cómo se organiza todo esto en el almacén:
+Los blobs van al fondo del todo, no apuntan a nada.
+Los árboles referencian a blobs y puede que a otros subárboles.
+Los commits referencian a un árbol particular, que es añadido en el repositorio junto al commit (el árbol padre que contiene la estructura en el momento del commit).
+Para terminar, cada tag puede apuntar, como mucho, a un commit.
+
+2) The Index
+Es un fichero temporal y dinamico, que describe la estructura COMPLETA del repositorio en el momento en el que estamos... Podemos ir introduciendo cambios poco a poco, con comandos para modificar el stage (git add, git rm, ...)... esos cambios se grabarán en una nueva versión del repositorio cuando hagamos el commit...
+
+O sea, en el index está el estado actual de todo!! Cuando hacemos un git add simplemente lo que pasa es que, además de generarse el blob y almacenarse con el nombre de su hash, se actualiza la información en el index asociadno al nombre del fichero el hash del nuveo blob que refleja su nuevo estado...!! (ahora, el nombre dle fichero estará asociado al nuevo blob).
+
+Sin embargo, hasta que no grabemos los cambios con un commit, aunque el working directory y el index estén sincronizados, se considera que el repo está sucio, porque el árbol que está en el HEAD (el último commit de la rama donde estamos) difiere del árbol del index... 
+
+O sea, tenemos wd, index, HEAD... sincronizamos wd con index con los git adds necesarios...
+SIncronizamos el index con el HEAD al hacer un nuevo commit...
+
+O sea:
+Cuando modificamos ficheros, se modifica el wd, pero el index no tiene esa información todavía, el a´rbol del index apuntará a los blobs de las versiones previas sin modificar de los objetos que han cambiado.
+COn git add hacemos que se creen los nuevos objetos modificados (blobs) y que el árbol que está en el index (que es un árbol temporal y dinámico) se vaya actualizando para apuntar a los blobs correctos. Además, al hacer git add, si cambió un objeto, además de almacenar este objeto en el almacén y actualizar la información del index, se vuelve a recalcular tb. el hash del directorio que lo contiene... (y el de los padres, que va a ser afectado!!!)
+
+Con el git commig se hace que el a´rbol temporal y actualizado del index se materialice en un nuevo objeto que se guarda en el almacén. Este nuevo árbol tiene ya la estructura correcta a los ficheros actuales (a cada nombre de fichero le hace corresponder el blobl actualizado).
+Además, tb se crea un nuevo objeto commit, que referencia al árbol actualizado con toda la info del estado actual, y se hace que el HEAD apunte a este nuevo commit, y que , además este commit apunte a sus padres...
+
+Muy interesante todo este proceso muy bien explicado en las páginas 60 a 64 de la segunda edición de version control with git... muy recomendable tener claro todo esto!!!
+
+O sea, con git status vemos los cambios que estamos introduciendo en el index, el index tiene toda la información de todos los ficheros que refleja la estrucutra actual...
+El index guarda todos estos cambios , manteniéndolos seguros hasta que nos decidamos a capturarlos definitivamente con un commit. O sea, el index permite una transición gradual, para pasar de un estado del repo al otro añadiendo cambios progresivamente, hasta que estemos listo para capturarlos...
+
+Veamos esto en funcionamietno...
+Ejemplo: creamos un fichero hello.txt con contenido "hello world" (da igual el nombre del fichero realmente)
+De momento no ha pasado nada
+Pero desde que hacemos git add fichero...
+se crea un objeto, en .git/objects/
+El contenido del objeto va a ser el del fichero, o sea hello world... y el nombre dle objeto
+se obtiene calculando el hash... los dos primeros caracteres van a utilizarse para, pro eficiencia, crear un directorio, y los otros 38 para el nombre del objeto...
+En este caso, como el hash es 3b18e512dba79e4c8300dd08aeb37f8e728b8dad (independiente del nombre del fichero, sólo dependerá del contenido) el objeto se almacenará como .git/objects/3b/18e512dba79e4c8300dd08aeb37f8e728b8dad
+(los dos primeros, 3b, sirven para crear un directorio dentro de objects, y con los otros 38 se le da el nombre al objeto...
+Podemos ver este objeto fácilmente:
+
+$ git cat-file -p 3b18e512dba79e4c8300dd08aeb37f8e728b8dad
+Resultado será: hello world
+
+Podemos usar git cat-file -p hash para ver cualquier objeto (blob, tree, commit, ...
+
+# git rev-parse: sirve para recuperar el hash entero de un objeto!!
+Podemos recuperar el hash entero con ...
+$ git rev-parse 3b18e512d  (o sea, dando el inicio o el tag)
+$ git rev-parse HEAD nos da el hash del HEAD de la rama actual...
+$ git rev-parse dev nos da el hash de la punta de la rama dev
+$ git rev-parse dev~3 nos da el hash del 4 commit empezando por la punta (hacia atrás) de la rama dev.
+$ git rev-parse master~3^2^2^
+32efcd91c6505ae28f87c0e9a3e2b3c0115017d8
+
+
+
+Observar que, aunque no esté todavía en un commit al hacer simplemente git add se crea el objeto (blob) y se almacena en el alamacén de objetos (su nombre será el hash de su contenido), y de la misma forma, al hacer el git rm se borra el objeto... 
+
+¿Y qué pasa con el nombre original del objeto, dónde está?
+Cuando hemos hecho el git add, se crea el blob para los objetos que hemos añadido, pero, de momento, no se crea un objeto con el árbol que define la estructura con los nombres..  En su lugar, se actualiza la estructura Index (.git/index) que lleva la cuenta de los blobs y sus correspondientes pathnames... cada vez que hacemos git add, git rm o git mv se actualiza este index con esta información (blobs y pathnames correspondientes).
+
+El objeto árbol con la correspondencia entre blobs q existen y sus pathsnames se creará cuando hagamos el commit (se utilizará un comando de bajo nivel, git write-tree ).
+Pero podemos ver como va quedando el index...
+git ls-files -s nos mostrará como está el index...
+100644 3b18e512dba79e4c8300dd08aeb37f8e728b8dad 0 hello.txt
+Se muestra la asociación existente entre el blob, y su pathname...
+
+Muy interesante con la opción -u nos muestra los ficheros del index que no se han podido mergear (unmerged) pq existe algún conflicto
+git ls-files -u
+
+Aunque normalmente esto lo hacemos con commit, podemos capturar y grabar ya el objeto árbol con el contenido del index...
+$ git write-tree
+68aba62e560c0ebc3396e8ae9335232cd93a3f60
+Ahora si buscamos los objetos que tenemos creados, veremos los dos, el blob y el árbol...
+
+$ find .git/objects
+.git/objects
+.git/objects/68
+.git/objects/68/aba62e560c0ebc3396e8ae9335232cd93a3f60
+.git/objects/pack
+.git/objects/3b
+.git/objects/3b/18e512dba79e4c8300dd08aeb37f8e728b8dad
+.git/objects/info
+
+(todo ello pese a que no hemos hecho ningún commit, esto es sólo para ver cómo funciona, no hacerlos así pq se hace todo automáticamente la grabación del index con el commit).
+
+Y qué es lo que contiene ese objeto árbol??
+$ git cat-file -p 68aba6
+100644 blob 3b18e512dba79e4c8300dd08aeb37f8e728b8dad hello.txt
+La primera parte 100644 es simplemente los permisos, escritos en octal (de usuario, grupo, y otros), después van cada blob con su pathname... (también podrían ir otros árboles, ...)
+
+Observar que si volvemos a hacer git write-tree varias veces (sin haber hecho ningçun cambio en el index)
+$ git write-tree
+68aba62e560c0ebc3396e8ae9335232cd93a3f60
+
+$ git write-tree
+68aba62e560c0ebc3396e8ae9335232cd93a3f60
+
+$ git write-tree
+68aba62e560c0ebc3396e8ae9335232cd93a3f60
+
+no se crea ningún árbol de nuevo, porque el index no ha cambiado, con lo que el hash del objeto árbol es el mismo... y el objeto ya está creado...
+
+El hash SHA1 es muy potente... si buscamos un objeto con un hash específico y no lo encontramos, significa que no tenemos ninguna copia de ese objeto!!
+Y podemos ver el hash de un fichero concreto con
+$ git hash-object fichero
+
+Además, nos va a servir para comparar objetos, simplemente si comparamos sus hash y son iguales podemos estar confidentes de que son el mismo objeto (sin tener que comparar byte a byte, por largo que sean los objetos)...
+
+además, consideremos el último commit. COmo el objeto último commit contiene dentro, entre otros, el hash de sus commits padres, así como el del árbol, y este hash del árbol depende a su vez de todos los (hash de los) subárboles y blobs, realmente el hash del último commit (o de cualquier commit) me sirve para identificar toda la estructura... si los hash de dos commits son disintos es que la estructura que representan es distinta!!!
+
+Resumiendo, el nombre de un objeto será su hash... el de un blob el hash de su contenido, el de un tree el de su contenido (el fichero que describe los objetos, con sus hash etc), el de un commit el hash de su contenido (el contenido es el hash que identifica al árbol principal que define sus objetos con su commit, el autor, el mensaje,,,).
+
+Observar que en el uso normal, no usaremos comandos de bajo nivel (git write-tree, git commit-tree) sino que con git commit etc... ya se hará todo.
+
+
+
+
+
+#Creación de un repo
+Si estamos en un directorio
+git init convierte el actual directorio en un repositorio 
+(o sea, crea el index y otros directorios y ficheros ocultos, y hace que el git supervise lo que hacemos
+en ese directorio)
+
+git clone dirección_del_repositorio hace que clone el repositorio señalado en nuestro disco duro
+Tras hacer eso sea va a crear donde estamos una nueva carpeta con el nombre del repo y todos su contenidos.
+
+Tanto git init como git clone se les puede poner el parámetro para que la rama principal se llame como queramos... 
+
+# Commit
+Cuando hacemos un commit, git captura un snapshot de los contenidos del index, del árbol del index... se hace que el a´rbolo dinámico-temporal que es el index, se grabe permanentemente ya como objeto fijo en el almacén de objetos..
+En este momento se grabarán en el almacén:
+1 objeto commit, que guarda el puntero al árbol del index que refleja el estado del repo en ese momento,el autor, etc...
+El árbol del index, que lista los contenidos del repositorio, y especifica, para cada nombre de fichero o directorio el hash del objeto blob o árbol correspondiente.
+
+Cada commit por tanto incluye un árbol que representa a todo el repositorio, y a su vez este árbol apunta a objetos del almacén... 
+
+Observar que habrá nuevos blobs para objetos que estén modificados (tanto directorios como ficheros).  Recordar que los blobs para objetos se crean cuando se añaden con el git add (aunque sólo si es necesario, si por lo que sea el hash de un fichero ya existe, significa que ese contenido ya existe y por tanto no será necesario crear el objeto pqya está).
+
+También se guarda un puntero al commit (o commits) q lo preceden, el commit (o commits) padres... de esta forma, los commits quedan encadenados, cada commit apuntando a su padre precedente (o padres).
+
+Observar que las comparaciones son rápidas y sencillas pq se comparan simplemente, tanto de ficheros como de directorios, sus hash... si son idénticos nada ha cambiado y no es necesario grabar nueva información en el almacén...
+Por eejmplo, si el hash (nombre) de un árbolo, que representa al directorio no hay cambiado, significa que absolutamente nada de ese directorio para abajo ha cambiado...
+
+Con el commit es cuando se introducen los cambios en el repo y quedan grabados permanentemente, siendo posible revisar el histórico como queramos.
+
+Aparte de con commit, git crear commmits al hacer merge, por ejemplo, para capturar el estado tras la unificación...
+
+Cada commit representa un cambio, atómico, en la historia del repo...
+
+Para referencia commits (para operaciones como revisar historial, comparar dos commits...) tenemos que hacer referencia a ellos... Lo podemos hacer:
+Explícitamente, con su nombre completo, o sea, con su código hash. Observar que este nombre es globalmente único, o sea, si dos personas tienen el mismo id de commit, es que refleja exactamente lo mismo. Ejemplo 1fbb58b4153e90eda08c2b022ee32d90729582e6
+Además, podemos acortar este hash si no hay ambiguedad en nuestro repo, y referirnos a los primeros caracteres del commit. Ejemplo, 1fbb58
+ímplicitamente, por ejemplo, con HEAD (que nos referencia al último commit)
+Etiquetas
+Un nombre realtivo para referirnos al commit que está hacia tras X lugrares... (el antepenúltimo, el hace 5 ...)
+
+# Relative commit names
+Hay mecanismos para identificar un commit, basado en su relación con otro, normalmente la punta de una rama. Para ello nos ayuudaremos de varios símbolos, como caret (^) y tilde (~) .
+Si un commit tuviera varios padres (resultado del algún merge) con el carte podemos elegirlos...
+Si c es un commit dado, c^1 será el primer padre,  c^2 el segundo, etc
+
+La tilde se utilzia para ir hacia atrás, a los padres de la generación anterior...
+Obs que si un commit solo tuviera un padre, c^1 y c~1 sería lo mismo.
+Si hubiera varios padres, tb. c~1 haría referencia al primero, c~2 al predecesor en esa línea, etc...
+
+Nomenclaturas equivalentes: C^1 es lo mismo que C^, C~1 es lo mismo que C~, C^1^1 es igual que C^^, etc...
+Así, combinando refs con estos símbolos podemos especificar un commit de forma relativa.
+
+#refs y symrefs
+Una referencia en un sha1 hash id que hace referencia a un objeto de nuestro repo. Aunque puede referenciar cualquier cosa, normalmente van a referenciar a commits.
+También hay otro tipo de refs, symbolic refs, que referencian, aunque indirectamente, a objetos de nuestro git.
+
+Ejemplos de refs: nombres de ramas locales, nombres de ramas remotas que estamos traqueando, etiquetas...
+
+Cada symbolic refs tiene un nombre explícito completo que está en el directorio refs:
+refs/heads/ref es el directorio que contiene las referencias a nuestras ramas locales.
+refs/remote/ref para nuestras remote tracking branches.
+refs/tags/ref para nuestras etiquetas.
+
+Hay unas cuantas referencias simbólicas que podremos usar cuando queramos por su nombre implícito...
+
+HEAD: el commit más reciente en nuestro rama actual.
+ORIG_HEAD
+FETCH_HEAD
+MERGE_HEAD: hace referencia al commit de la otra rama que está siendo unificada con la nuestra
+
+#GIT STATUS
+es fundamental para ver la situación, que ficheros cambiados hay, qué está en el stage, etc
+git status: nos muestra y da tips de la situación (ficheros sin trackera, cambios no añadidos, lo que está en el stage...)
+git status -s o git status --short nos lo da resumido con flagas en dos columnas...
+
+#Configuración del GIT
+configuración global!!
+FUNDAMENTAL!!!
+# tells git who you are
+$ git config --global user.name "Your Name"
+# tells git how to email you
+$ git config --global user.email "your.email@domain.com"
+Observar que si no ponemos lo de --global se grabará eesta opción pero sólo para el repo actual!!!
+
+
+# handles end-of-line character differences
+$ git config --global core.autocrlf true
+# prevents conversion warning messages
+$ git config --global core.safecrlf false
+# sets Notepad as the default editor
+$ git config --global core.editor notepad
+# list all current configuration settings
+$ git config --list
+
+# Settings sobre fin de línea
+The core.autocrlf and core.safecrlf settings are needed to handle end-of-line character differences between Windows and Unix.
+Cada vez que en un editor apretamos return nos pasará a la siguiente línea (End of Line EOL)
+¿Cómo se codifica este EOL?
+a) En Windows: el apretar return se graban dos caracteres, CR (carriage return) y LF (line feed).
+b) En Unix: el EOL se graba como LF simplemente.
+
+Esto puede causar problemas entre usuarios con distinta plataforma que colaboran en proyectos, así que lo que hacemos es utilizar un setting para que sea igual para todo el mundo.
+
+Importante: tenemos que configurar el git para que sepa dos cosas:
+1. ¿Cómo grabar estos EOL cuando se almacenan en el REPO con un commit? O sea, debe git normalizar cómo se los EOL en el REPO (normalizar significa que los EOL se graban siempre como LF)
+2. ¿Cómo se transforman (o no) cuando alguien chequea una versión de un fichero? O sea, cuando se chequea una vesión, se hace algo con los EOL , o se deja tal cuál están almacenados??
+
+Esto lo configuramos con el setting core.autocrlf, que puede tomar estos 3 valores:
+a) core.autocrlf = true: le decimos a git que normalice los EOL siempre a LF al almacenar los objetos en el repo. Además, le decimos que cuando chequeemos, se cambie el fichero del almacén para que en el wd los EOL se guarden como CRLF. ESTE ES EL SETTING RECOMENDADO SI TRABAJAMOS EN WINDOWS!!!!
+
+b) core.autocrlf = input. Significa, normalizar al grabar al almacén (los EOL se grabarán como LF) y no cambiar cuando se chequea. ESTE ES EL SETTING RECOMENDADO SI TENEMOS UNIX; MAC; LINUX...
+This tells Git to store files in the repository using the Unix EOL and convert it back to the Windows EOL when working with the file locally on Windows
+Si estamos trabajando en Windows y no activamos esta opción, podemos crear muchos problemas al colaborar con tora gente en Github, etc, o con otros sitemas con Unix.
+
+c) core.autocrlf = false. No hacer nada, o sea, que cuando se grabe el objeto, se grabe lo que está, y cuando se chequee una versión para trabajar con ella, en el wd se ponga lo que hay, sin hacer ningún cambio en la codificación existente para lois EOL. 
+
+Recomendado la opción a) (si estamos en Windows) o la b) (para el resto). No recomendada dejar a false pq puede crear muchos problemas.
+
+
+#GIT configuración, jerarquía....
+Podemos configurarlo a varios niveles, empezando por los de mayor prioridad...
+
+1) Fichero .git/config que está en cada repo.
+Va a guardar la configuración específica del repo en el que estamos.
+Estos settings los podemos fijar con la opción --file o si hacemos el git config simplemente.
+Van a tener más prioridad que los otros niveles, y van a afectar específicamente al repo.
+by default. These settings have the highest precedence.
+Ejemplo:
+$ git config user.name "Jon Loeliger"   
+$ git config user.email "jdl@special-project.example.org"
+//esto sólo va a tener efecto en el repositorio concreto donde lo hagamos...
+
+2) Fichero ~/.gitconfig
+Este fichero va a guardar la configuración del git a nivel de usuario.
+Se fijan con la opción --global  (O sea, git config --global etc... por ejemplo
+git config --global user.name "Miguel Ojeda"
+
+/etc/gitconfig
+System-wide configuration settings manipulated with the --system option if you have proper Unix file write permissions on it.
+These settings have the lowest precedence y afectan a cualquier usuario y cualquier repo dentro del sistema (o no ser, claro, que fijemos la opción en una de las jerarquías anteriores).
+Depending on your actual installation, the system settings file might be somewhere else (perhaps in /usr/local/etc/gitconfig), or may be entirely absent
+
+git config -l lista los settings de todas las variables, en cualquiera de los niveles!!!
+
+Lógicamente, podemos ver estos ficheros (en cualquiera de los niveles) y editarlos...
+Por ejemplo, verlos con cat o con un editor...
+$ cat ~/repo/.git/config  //para ver parámetros locales del repo... 
+$ ~/.gitconfig   //para ver parámetros globales, si está creado el fichero claro
+
+Podemos quitar el valor de una opción on --unset
+$ git config --unset --global user.email
+
+# GITIGNORE:
+Archivo .gitignore: útil para que el git ignore una serie de extensiones, que no supervise cambios. Hay ficheros ya hechos en github dependiente de como son los proyectos (para python, para R, etc)
+También podemos añadirle luego cosas como los ficheros que empiezan por ~ (que suelen ser bloqueo de editores de texto), ficheros *.log, *.temp, fotos, etc... etc (lo que queramos que no supervise).
+Este fichero lo podemos poner global (en .config/git/.gitignore de nuestro directorio home), o 
+un .gitignore específico en cada repo, que suele ser más normal...
+Además hay opciones globales (e imagino que locales):
+git config --global core.excludesfile ...
+o simplemente  ira añadiendo lineas según necesitmoes para ir excluyendo lo que necesitemos...
+echo *.o >> .gitignore
+(añadiría una línea para que no sigue los ficheros *.o)...
+Luego habrá que hacer el git add con el .gitignore
+EL .gitignore está en el directorio base del repo... (no en ./.git/)
+Ejemplos de líneas para añadir:
+*.o
+*.log
+./directorio_a_ignorar/ o directorio_a_ignorar/
+debug/32bit/*.o
+
+Importante: podemos tener más .gitignore en otros subdirectorios del repo... (sus cambios afectarán a partir de ese directorio). O sea, podemos tener en el directorio principal un .gitignore, y luego algunos .gitignore en directorios concretos para ir refinando... EL del directorio principal se aplicarán en todo el repo, y los otros, apartir del direcotorio para abajo...
+Si queremos, que, en un directorio, no se ignore algo que estaba ignorado en un nivel superior, podemos hacerlo con !
+Ejemplo, en directorio princiapl ignoramos *.o
+Pero en el subdirectorio drivers podríamos crear un .gitignore con esta línea,,,
+!driver.o   (esto hace que se deje de ignorar los ficheros correspondientes)
+
+
+
+
+
+# STAGE THE CHANGES (o sea, meter los ficheros cambiados en el STAGE o INDEX, un almacén previo con los cambios que añadiremos en el siguiente COMMIT)
+El stage es la zona intermedia donde vamos metiendo lo nuevo que se ha cambiado, creado, borrado... para que esos cambios se reflejen, ya definitivamente, cuando hagamos el commit...
+Esta zona es intermedia, y lo podemos meter y sacar del stage si queremos... no hay problema... los cambios se grabarán en un snapshot cuando hagamos commit...
+git add: puede cambiar ligeramente el compartamiento según versiones
+lo más conveniente es asegurarse con la documentación, o ir probando con el git status
+git add sirve para marcar unos ficheros como cambiados... los metemos como en una especie de zona, stage, 
+una especie de carrito en el que meteremos aquellas cosas que queramos marcar como cambiadas para que luego,
+cuando hagamos el commit, nos capture el estado del repo con estos cambios.
+git add . stages new and modified, without deleted
+git add -u stages modified and deleted, without new
+git add -u is equivalent to git add –update
+git add -A stages All
+git add -A is equivalent to git add –all
+
+git add --interactive nos permite añadir objetos interactivamente...
+(existe algo parecido para el commit para ver lo que se está añadiendo al commit).
+
+# SACAR ALGO DEL STAGE
+A lo mejor hemos hecho git add . , con lo que hemos añadido todos los ficheros cambiado al stage, pero resulta que queremos
+hacer un commit pero que cierto fichero no se añada al commit, aunque este cambiado, pq todavía el fichero no está en un 
+estado aceptable, o por la razón que fuera...
+Para quitarlo del stage se hace:
+git restore --staged fichero
+Bueno, en el libro PRO GIT pone git reset HEAD fichero...
+Básicamente, lo mejor es hacer git status, y él nos dará tb.l las instrucciones adecuadas para sacar algo del stage.
+
+Obs. resulta que, apartir de git 2.23.0 existe el comando git restore que es más moderno, con el que se pueden hacer un montón de cosas de estas de forma más sencillas!!
+
+# HEAD, INDEX
+HEAD es una referencia que nos va a indicar la rama que está activa en ese momento. El HEAD se guarda en .git y es simplemente 1 fichero, cuyo contenido guarda la rama en la que estamos...
+Para ver su contenido (aunque evidentemente no es necesario) podríamos hacer...
+$ cat .git/HEAD
+ref: refs/heads/master
+Esto nos indica que actualmente la rama master es el HEAD.
+Observa que si estamos en un estado con el HEAD detached (por ejemplo, si hacemos un checkout a un commit que no es el último de la rama) en este caso el contenido de HEAD va a ser el codigo ssh del commit en cuestión. 
+En resumen, git sabe dónde está y que contenidos tiene que meter en el working directory consultando al HEAD!!!
+El fichero HEAD no es directamente manipulable por nosotros!!
+
+Lo normal será que el HEAD sea la "punta" de la rama donde estamos trabajando, pero podemos cambiar esto con git checkout...
+
+INDEX nos referimos a la zona de stage...
+o sea, cuando hacemos el git add .... lo que hacemos es meter las cosas en el stage preparando todo para el commit a esta zona previa a hacer el commit se le llama INDEX
+
+Podemos ver el estado del index (carrito) respecto al working directory con git status... así como lo que no está todavía y ha cambiado, o se ha creado, etc..
+Recordar que el index contiene la información actualizada de TODO EL CONTENIDO del repo, o sea, los ficheros con rutas y blob correspondiente... Es un árbol temporal y dinámico que vamos actualizando con git add, git rm... cuando hagamos el commit este árbolo se meterá tb definitivamente en el almacén, y el objeto commit contendrá una referencia a este árbol.
+
+También podemos echar un vistazo al estado interno del index con el comando de fontanería (plumbing)
+git ls-files Show information about files in the index and the working tree
+si añadimos la opci´n -s o --stage, además, nos da información ampliada con:
+Show staged contents' mode bits, object name and stage number in the output.
+git ls-files -s (o git ls-files --stage).
+Observar que el comando ls-files es de fontanería (no haría falta utilizarlo nunca, utilizaremos los de más alto nivel, "porcelaine"). Además, este comando interno tiene muchísimas opciones de configuración, sirve para muchísimas cosas más aparte de ver los contenidos del inex....
+
+# COMMIT
+git commit -m "mensaje" hace el commit (o sea, hace la captura del estado del repo)
+git commit: crear una nueva fotografía, es como un nuevo punto de restauración
+todos estos puntos creados hacen posible que podamos restaurar cualquier versión de cualquier fichero en cualquier momento
+Con esto captura el estado actual del repo, que se obtiene añadiendo a lo que ya tenía anteriormente aquellos ficheros que hallamos añadido al index (como un carrito de la compra con los cambios) anteriormente con los commandos git add.
+
+Observar que si especificamos el fichero, no es necesario el git add... ejemplo
+git commit index.html... lo que hará es que primero añade el fichero al index, y luego hace el commit.
+Obs: no es aconsejable hacer esto, mejor controlar haciendo nosotros git add necesarios y comprobar con git status que está el index como nos interesa...
+
+Observar que si hemos cambiado ficheros y no los hemos metido al carrito de los cambios (stage) con el git add estos cambios no van a estar reflejados en el snapshot del repo (aunque lo podremos hacer posteriormente, claro). Por ejemplo, si el fichero que hemos cambiado está en un estado todavía incompleto no es necesario añadirlo con el git add, lo podremos hacer cuando esté mejor (para que si alguien se descarga el repo no lo vea la versión a medio hacer).
+
+Recordar: simplemente con git add ya se crea el blob del objeto y se pone en el almacén, con su nombre siendo el hash...
+Ahora, cuando hacemos commit, el fichero del que se saca la foto es la versión que está en el index, no la úlitma versión modificada (si hubiéramos hecho cambios posteriores al git add no se guardarían en el commmit).
+Si quisiéramos guardar la último versión modificada después de haber hecho el git add,  deberíamos volver a hacer git add antes... esto hará que se almacene el objeto en el almacén (con su hash), etc...
+
+git commit -am "mensaje" o git commit -a -m "mensaje del commit"
+la opción -a es lo mismo que --all, hace que, previo al commit, se meta en el stage (index, cachear) todos los ficheros que han cambiado, de los seguidos previamente (o se,a de los ficheros seguidos, detecta si ha habido modificaciones, o hemos borrado!!).
+La opción -a lo que significa es automáticamente incluir (add) en el stage todos los ficheros que íbamos trackeando que hayan cambiado... (o sea, nos ahorramos hacer el git add .).
+El peligro es que a lo mejor incluimos ficheros que no queríamos... tener cuidado por si acaso
+
+Observar que esto no añade los ficheros sin trackear  que hallamos modificado, o los nuevos que hayamos creado (y por tanto, al ser nuevo, son no trackeados).
+O sea, con git commit --all lo que hace es que, automáticamente, detecta cambios en los ficheros que anteriormente estuvieran en el repo (estar en el repo son los trackeados, ya que los no traqueados, aunque estén pululando por los directorios, no están almacenados en el repo .git).
+
+Es para no tener que hacer previamente el git add -A (o git add . y luego git add -u)
+No aconsejable... mejor ir haciendo los git add nosotros...
+
+git commit --amend
+Sirve por ejemplo si queremos mantener el commit pero modificar el mensaje
+También sirve si nos hemos olvidado de añadir con git add algún fichero, y no queremos hacer un nuevo commit sino utilizar el anterior, lo que haríamos es hacer el git add de lo que habíamos olvidado y luego el git commit --amend
+Lo que conseguimos con esto es no tener muchos commits seguidos sin necesidad... 
+En este caso, si no ponemos la opción -m , cuando se nos abre el editor ya contendrá el mensaje del commit anterior..
+con lo que puede ser útil no utilizar la opción -m
+Realmente lo que sucede con --amend es que se crea un nuevo commit, que reemplaza al anterior, es como si el anterior 
+no hubiera ocurrido...
+Por supuesto, cuidado, esto solo útil en local si no hemos hecho push... si no es problemático, evitarlo...
+
+git commit --interactive nos permite explorar lo que se va metiendo en el commit....
+
+
+# GIT LOG: historial
+git log commit: muestra todos los commits con sus comentarios respectivos, que son alcanzables desde ese commit Alcanzable significa yendo hacia atrás (por todas las ramas, etc), o sea todos sus ancestros...
+
+Ejemplo: git log main  o git log branch_14~13
+Si hacemos git log se presupone HEAD por defecto.
+
+También podemos ver el log de todas las ramas: git log --all
+
+
+
+# git log con rangos de commits...
+Obs que realmente ver todo el historial hacia atrás de los tiempos es demasiado, por ese normalmente lo limitaremos...
+$ git log --pretty=short --abbrev-commit master~12..master~10
+
+
+# opciones de git log!!
+git log -4 (muestra los últimos 4 cambios, o sea, commits)
+git log --oneline nos da una versión más resumida
+git log -p nos da versión extendida, mostrando los cambios respectivos para cada fichero en formato differences (o sea, la -p es que nos muestra el patch, o sea, los cambios habidos en el fichero para conseguir la nueva versión)
+git log --graph en formato gráfico, con ramas
+git log --oneline fichero muestra sólo los commits que tienen que ver con el historial del fichero
+¿¿¿ si no cambia el fichero en un commit, saldría??? verlo...
+
+muy útil la opción -p o --patch que muestra la diferencia introducida en cada commit
+--stat sumariza con algo de información adicional para cada commit  (ficheros cambiados, inserciones, línea borradas...)
+--pretty=opción (oneline, short, full, fuller, format (potente, pq nos permite configurar nuestro propio formato de log!!))
+(observar que no podemos dejar espacios, se escribiría, por ejemplo, --pretty=oneline)
+
+Ejemplo con format: $ git log --pretty=format:"%h - %an, %ar : %s"
+
+Opciones para format:
+Specifier Description of Output
+%H 	Commit hash
+%h Abbreviated commit hash
+%T Tree hash
+%t Abbreviated tree hash
+%P Parent hashes
+%p Abbreviated parent hashes
+%an Author name
+%ae Author email
+%ad Author date (format respects the --date=option)
+%ar Author date, relative
+%cn Committer name
+%ce Committer email
+%cd Committer date
+%cr Committer date, relative
+%s Subject
+
+Muy interesante, sobre todo con --oneline ( o --pretty=oneline) y --pretty=format es
+--graph pq muestra información del branch y merge!!!
+
+Opciones del git log...
+Option Description
+-p Show the patch introduced with each commit.
+--stat Show statistics for files modified in each commit 
+--shortstat Display only the changed/insertions/deletions line from the --stat command.
+--name-only Show the list of files modified after the commit information.
+--name-status Show the list of files affected with added/modified/deleted information as well.
+--abbrev-commit Show only the first few characters of the SHA-1 checksum instead of all 40.
+--relative-date Display the date in a relative format (for example, “2 weeks ago”) instead of
+using the full date format.
+--graph Display an ASCII graph of the branch and merge history beside the log output.
+--pretty Show commits in an alternate format. Option values include oneline, short,
+full, fuller, and format (where you specify your own format).
+--oneline Shorthand for --pretty=oneline --abbrev-commit used together.
+
+git log --oneline --decorate --graph --all it will print out the history of your commits, showing where your branch pointers are and how your history has diverged.
+
+
+Opciones para acotar el git log...
+git log -n sólo muestra los n últimos...
+git log --since=... ejemplo git log --since=2.weeks (muchos formatos, consultar docs..)
+git log --until=... / git log --author= / git log --grep... 
+git log -S string ... nos muestra los commits donde se cambian el número de referencias de esa cadena...
+(con ello sabríamos por ejemplo, cuando se añadió y quitó...)
+Muchísimas posibilidades, consultar PRO GIT !!!
+
+One technique to constrain history is to specify a COMMIT RANGE using the form since..until. Given a range, git log shows all commits following since running through until. Here’s an example.
+$ git log --pretty=short --abbrev-commit master~12..master~10
+O sea, para ver el log entre dos commits
+
+También podemos usar -num para restringir a un número específico de commits; 
+
+La opción -p nos muestra el patch (los cambios) introducidos en ese commit
+$ git log -1 -p 4fe86488
+commit 4fe86488e1a550aa058c081c7e67644dd0f7c98e
+Author: Jon Loeliger <jdl@freescale.com>
+Date: Wed Apr 23 16:14:30 2008 -0500
+Add otherwise missing --strict option to unpack-objects summary.
+Signed-off-by: Jon Loeliger <jdl@freescale.com>
+Signed-off-by: Junio C Hamano <gitster@pobox.com>
+diff --git a/Documentation/git-unpack-objects.txt b/Documentation/git-unpack-objects.txt
+index 3697896..50947c5 100644
+--- a/Documentation/git-unpack-objects.txt
++++ b/Documentation/git-unpack-objects.txt
+@@ -8,7 +8,7 @@ git-unpack-objects - Unpack objects from a packed archive
+SYNOPSIS
+--------
+-'git-unpack-objects' [-n] [-q] [-r] <pack-file
++'git-unpack-objects' [-n] [-q] [-r] [--strict] <pack-fil
+
+
+#git show
+Nos muestra objectos del store (los que sean, pueden se commits, blobs, árboles)
+Por ejemplo, si queremos ver info del antepenúltimo commit haríamos...
+$ git show HEAD~2
+
+o incluso de algún blob concreto, refiriéndonos por el hash, o por su rama:nombre
+$ git show origin/master:Makefile
+
+# herramienta gitk
+gitk nos muestra información gráfica de los commits, ramas, etc...
+realmente, aunque es del git, no se pone git gitk, sino simplemente se invoca con: gitk
+
+#rangos de commits....
+Antes de nada recordar:
+Commits alcanzables: son todos aquellos a los que podríamos llegar, yendo hacia atrás en el tiempo, por todos los caminos (ramas posibles). O sea, recoge todos los ancestros (se incluye tb. en la definición a él mismo)
+
+Los rangos de commits son de la forma commit_inicial..commit_final
+Si omitimos el principio o el final, se presupone HEAD (o sea, el rango start.. es equivalente a start..HEAD)
+
+Usamos estos rangos normalmetne para examinar una rama o parte... por ejemplo con git log
+Por ejemplo, si estamos en la rama M, git log M~12..M~10
+Observar que, por la definición, el rango van a ser sólo dos commits (M~11 y M~10) (lo explica debajo)
+
+Observar que cuando hacemos git log Y estamos solicitando info de todos los commits ancestros de Y, o sea, los que podemos alcanzar yendo hacia atrás en el tiempo empezando desde Y, metiendonos por todas las ramas y todos los caminos.
+Si queremos que se nos muestren todos los logs que podemos alcanzar desde Y pero excluyendo X y todos sus antecesores... escribiremos git log ^ X Y  (o sea, pasa de X y de todos sus ancestros)
+
+Pues bien, X..Y realmente significa ^X Y (o sea, commits alcanzables desde Y pero que no incluyan nada de X ni sus antecesores...); dicho de otra forma: consiste en hallar todos los alcanzables de Y y eliminar después lo conducente (incluido) a X.
+
+Otra opción para rangos es usar los 3 puntos ...
+A...B significa diferencia simétrica entre A y B:  nos da los commits alcanzables desde A o desde B, pero no desde ambos...
+$ git rev-list A B --not $(git merge-base --all A B)
+Podemos pensar en la diferencia simétrica como: muestráme todo los ancestros que están en A o en B, pero sólo hasta el punto en el que ambas ramas divergieron... 
+
+Realmente git no entiende de rangos: cuando le decimos git log X..Y él lo traduce a git log ^X Y
+
+Podemos darle cualquier combinación, por ejemplo: $ git log ^dev ^topic ^bugfix master
+
+
+#Git bisect (búsqueda de commits...)
+git bisect
+usage: git bisect [help|start|bad|good|skip|next|reset|visualize|replay|log|run]
+
+Aplicación: algo, que antes funcionaba, dejó de funcionar... ¿cuál es el último commit (el más reciente) en el que la funcionalidad funcionaba OK??
+
+El commando git bisect se encarga de encontrar el último commit que funcionaba, y para ello busca entre dos commits (uno bueno y otro malo) por el método de biseccion.
+
+Normalmente, el malo va a ser el HEAD actual, ya que nos hemos dado cuenta de que algo falla .
+
+Procedimiento:
+0. Antes de nada guarda el trabajo actual con un commit o algo, pq bisect va a poner en el wd varias versiones a la vez de los ficheros...
+1. git bisect start.
+2. Ir a un commit malo con checkout y ejecutar git bisect bad.
+También sirve, sin ir previamente, hacer git bisect bad bad_commit
+3. Ir a un commit bueno con checkout y ejecutar git bisect good
+también sirve, sin ir previamente, hacer git bisect good goog_commit
+
+Podemos hacer todo esto en un solo paso con:
+git bisect start commit_malo  commit_bueno  (en este orden, primero el malo, luego el bueno!)
+Por ejemplo, si hacemos git bisect commit_malo HEAD nos da error, pq nos dice que el bueno es HEAD, o sea, el último, por tanto, no hay que hacer nada para encontrar el último bueno!!
+
+A partir de ahora el git bisect nos irá guiando solo, nos irá colocando en el commit medio y tendremos que decirle si ese commit es bueno o malo, haciendo las comprobaciones previas necesarias.
+Si el commit en el que nos hemos colocado es bueno escribiremos git bisect good, y si es malo, escribiremos git bisect bad.
+Si en algún paso tenemos dudas o no se puede validar por cualquier causa, simplemente hacer
+git bisect o git bisect next.
+Cuaqndo lo hallamos encontrado, simplemente tomar nota y hacer git bisect reset
+(también lo podremos hacer en cualquier momento si la hemos liado, y así poder volver a empezar)!!
+
+Otra opción es señalarle un script para que el haga las comprobaciones... (ver el final)
+Esto se hace, después de hacer los pasos 1, 2, 3 y que nos coloque en el primer commit medio, escribiendo ...
+git bisect run ../script_test   (la ruta que sea, pero que siempre esté disponible, claro)
+(ver ejemplo al final!!!)
+
+Ejemplo de bisect (clonar https://github.com/bast/git-bisect-exercise.git para tener un repo con muchos commits específico para trabajar con git bisect).
+
+El repo básicmanete consiste en un README.md y un código python get_pi.py que debería calcular pi utilizando un algoritmo... el caso es que, en un momento dado, se fastidió el programa y ahora calcula 3'57 en lugar de 3'14 como hacia antes... ¿Cómo buscar la última versión donde funcionaba todo?
+El problema es que tenemos muchos commits 500)
+Supongamos que queremos buscar, utilizando como commit bueno el primero, y el malo el último...
+EL último está claro cual, 
+El primero commit para hallarlo podríamos hacerlo de varias formas....
+Ir hacia atrás en el log para localizarlo, pero es muy lento si el log ocupa varias páginas...
+$ git log --oneline | tail -n 1    //es el f0ea950
+$ git rev-list —max-parents=0 HEAD (no lo entiendo esto de git rev-list)
+
+Nos colocamos en ese (git checkout f0ea950) y hacemos python get_pi.py y observamos que funciona OK...
+¿Dónde se fue al traste?
+
+Ya tenemos los requisitos: un commit malo (el último) y uno bueno (f0ea950)
+Serguir los paso anteriores...
+Sale que el último bueno era...41af86cd42a966e4375b68bbad4af1384a0558cf]
+Y el ´primer malo es ... 326f68a558501a6f44d7685c2c1795794bac09b5
+
+Observar que, en cada paso del bisect, tendremos que ejecutrar en este ejemplo 
+python get_pi.py y comprobar el resultado para decirle luego, si es correcto o no con git bisect good o bad.
+
+
+Automatización en git bisect: git bisect run script !!!
+Podemos automatizar todo esto para que en cada commit, la comprobación de si es bueno o malo la haga git solito
+Simplemente para ello deberemos escribir un script o algo cuya salida sea de un exit code de nonzero si el commit es malo, y un eit code de 0 si es bueno.
+
+En el ejemplo en el que estamos, el script sería, en python...
+-------------------------
+import subprocess
+import math
+import sys
+output = subprocess.check_output(['python', 'get_pi.py'])
+result = float(output)
+if math.isclose(result, 3.14):    sys.exit(0)
+else:    sys.exit(1)
+--------------------
+Imagnermos que guardamos este script como test.py, pues simplemente, después de que se inicie el proceso+
+y estemos en el primer commit intermedio, ejecutaríamos...
+git bisect run    python ../test.py    (la ruta del script debe ser siempre accesible, claro!!!)
+
+Para ver el log de todo: git bisect log 
+Para verlo de nuevo en acción repetida: git bisect run  //creo que no sirve...
+Creo que está mal explicado, sirve para especificar un script que ejecutaremos tras colocarnos en el nuevo commit del punto medio, de forma que sepamos rápidamente de forma auomática si el commit en el que estamos es bueno o mal!!!
+Para verlo de forma visual: git bisect visualize  //creo que no sirve...
+
+Observar que git guarda info sobre todos los bisects que va haciendo en ficheros .git/BISECT_*
+Si nos hemos olvidado de hacer el reset o algo siempre podremos borrarlos con rm .git/BISECT_*7
+
+# búsqueda de commits con git blame
+Busca en el estado actual de un fichero, y nos da información sobre quién hizo el último cambio, en cada línea, y en qué commit ocurrió...
+Observar que esto no es, forzozamente para buscar culpables...
+$ git blame -L 35, init/version.c   
+//en esto caso, con la opción -L start, end nos muestra los cambios apartir de la línea 35 en el fichero!!
+4865ecf1 (Serge E. Hallyn 2006-10-02 02:18:14 -0700 35) },
+^1da177e (Linus Torvalds 2005-04-16 15:20:36 -0700 36) };
+4865ecf1 (Serge E. Hallyn 2006-10-02 02:18:14 -0700 37) EXPORT_SYMBOL_GPL(init_uts_ns);
+3eb3c740 (Roman Zippel 2007-01-10 14:45:28 +0100 38)
+c71551ad (Linus Torvalds 2007-01-11 18:18:04 -0800 39) /* FIXED STRINGS! Don't touch! */
+c71551ad (Linus Torvalds 2007-01-11 18:18:04 -0800 40) const char linux_banner[] =
+3eb3c740 (Roman Zippel 2007-01-10 14:45:28 +0100 41) "Linux version " UTS_RELEASE "
+3eb3c740 (Roman Zippel 2007-01-10 14:45:28 +0100 42) (" LINUX_COMPILE_BY "@"
+3eb3c740 (Roman Zippel 2007-01-10 14:45:28 +0100 43) LINUX_COMPILE_HOST ")
+3eb3c740 (Roman Zippel 2007-01-10 14:45:28 +0100 44) (" LINUX_COMPILER ")
+3eb3c740 (Roman Zippel 2007-01-10 14:45:28 +0100 45) " UTS_VERSION "\n";
+3eb3c740 (Roman Zippel 2007-01-10 14:45:28 +0100 46)
+3eb3c740 (Roman Zippel 2007-01-10 14:45:28 +0100 47) const char linux_proc_banner[] =
+3eb3c740 (Roman Zippel 2007-01-10 14:45:28 +0100 48) "%s version %s"
+3eb3c740 (Roman Zippel 2007-01-10 14:45:28 +0100 49) " (" LINUX_COMPILE_BY "@"
+3eb3c740 (Roman Zippel 2007-01-10 14:45:28 +0100 50) LINUX_COMPILE_HOST ")"
+3eb3c740 (Roman Zippel 2007-01-10 14:45:28 +0100 51) " (" LINUX_COMPILER ") %s\n";
+Observar que va por orden de línea... empezamos aquí por la 35, 36, etc..
+
+Se puede configurar de muchas formas, con muchos parámetros....
+--porcelain información mucho más detallada, etc
+
+
+# Búsqueda de commits con pickaxe
+Es la opción -S del comando git log, o sea, llamamos pickaxe a utilizar git log -Sstring 
+Observar que, como siempre, se puede especificar el commit (por defecto HEAD), y esta opción se suele utilizar para ficheros concretos...
+Hace, como git log, una búsqueda hacia atrás (buscando todos los ancestros del commit), pero sólo nos muestra aquellos commits cuyo diff de cambios, (normalmente se usa especificando un fichero) incluye la cadena buscada.... O sea, nos da los commits donde se añadió o quitó el texto que queremos buscar.
+
+Ejemplo:
+$ git log -Sinclude --pretty=oneline --abbrev-commit init/version.c
+cd354f1... [PATCH] remove many unneeded #includes of sched.h
+4865ecf... [PATCH] namespaces: utsname: implement utsname namespaces
+63104ee... kbuild: introduce utsrelease.h
+1da177e... Linux-2.6.12-rc2
+
+Lo que nos muestra la salida son los commits que añaden o borran líneas que contienen la palabra "include".
+Observar que si en un commit se añaden y borran el mismo número de líneas con la palabra "include", ese commit no aparecería (nos muestra los commits cuyo total de líneas cambiadas, restando, es mayor que cero).
+
+Es una de las herramientas más potentes para hacer "arqueología" en git!!
+
+# Versiones de un fichero
+Lo que está en el working directory
+Lo que está en el stage  (INDEX)
+Cada una de las versiones de los commits
+
+#diffs
+A diff is a compact summary of the differences (hence the name “diff”) between two items. For example, given two files, the Unix and Linux diff command compares the files line by line and summarizes the deviations in a diff.
+Ejemplo:
+
+$ cat initial 					$ cat rewrite
+Now is the time 				Today is the time
+For all good men 				For all good men
+To come to the aid 				And women
+Of their country. 				To come to the aid
+								Of their country
+								
+Veamos como funciona el comando , con la opción -u;
+The -u option produces a unified diff, a standardized format used widely to share modifications.
+
+$ diff -u initial rewrite
+--- initial 1867-01-02 11:22:33.000000000 -0500
++++ rewrite 2000-01-02 11:23:45.000000000 -0500
+@@ -1,4 +1,5 @@
+-Now is the time
++Today is the time
+ For all good men
++And women
+ To come to the aid
+ Of their country
+
+Vemos q un fichero lo marca con ---, el otro con +++
+The @@ line provides line number context for both file versions. O sea, nos marca, para cada versión (con un - o un +) algunas líneas antes del conflicto... nos indica la línea con el primer indicador, y tb nos pone el número de líneas del contexto mostrado.
+@@ -1,4 +1,5 @@ significa que el contexto es la línea 1 para ambos (-1, +1), nos pone algunas líneas antes y posteriores... en total, el trozo que aparece, teniendo en cuenta las anteriores y posteriores al conflicto, son de 4 (para el primer fichero) y 5 para el segundo.
+
+A line prefixed with a minus sign (–) must be removed from the original file to produce the
+new file.
+Conversely, a line with a leading plus sign (+) must be added to the original file to produce the new file.
+A line that begins with a space is the same in both files and is provided by the -u option as context.
+
+Además de mostrarnos las diferencias, nos muestra formalmente qué deberíamos hacer para transformar uno de los ficheros en el otro...
+
+También, si usamo diff -r -u recorre jerárquicemente estructuras, comparando ficheros con mismo nombre...
+
+Git incorpora su propia utilidad git diff; además, con git diff -r puede recorrer dos objetos árbol y comparar genrando un informe de las diferencias...
+
+
+
+#GIT DIFF
+git diff sirve para comparar entre ÁRBOLES, o sea, entre la estrucutra del repoositorio definida por esos árboles. Observar que la salida de diff se puede restringir para mostrarnos sólo diferencia entre directorios o ficheros concretos.
+
+Recordar que siempre tenemos tres niveles: el árbol del wd, stage (index, árbol temporal y dinámico), almacén de objetos (con commits (con su árbol) u otros subárboles)
+
+Podemos utilizar para comparar cualquiera de estos niveles: o sea, el árbol de wd, el árbol dinámico del stage, árboles del almacén (los principales de los commits, o algunos subárboles...))
+
+Por tanto, podremos hacer 4 tipos de comparaciones:
+
+1) git diff: lo más sencillo, compara el wd con el stage... nos muestra los ficheros "sucios", candidatos a ser añadidos al stage para luego hacer el commit y grabar definitavmente los cambios.
+
+2) git diff algún_commit: compara el wd con algún commit...
+Observar que podremos utilizar HEAD, ramas, etiquetas,  ... si queremos en vez del nombre completo...
+
+3) git diff --cached algún_commit (equivalente a git diff --staged algún_commit)
+Nos compara el stage con el commit que le digamos... Si no especificamos ningún commit se sobreentiende que es con el HEAD.
+Por ejemplo, si hacemos git diff --cached (se sobreentiende HEAD) nos mostraría cómo el siguiente commit alteraría la rama actual.
+
+4) git diff commit1 commit2: nos muestra las diferencias entre ambos commits (o sea, entre toda la estructura que está del repositorio definida por el árbol principal de ambos commits)
+Este comando ignora totalmente el wd y el index, se centra simplemente en los commits nombrados.
+Observar que para este modo también se añade esta forma adicional:
+git diff commit1..commit2
+
+CUIDADO: esto simplemente se fija en el commit1 y el commit2, no tiene nada que ver con el uso de commit1..commit2 en git log, que nos mostraría todo el historial del commit2 sin incluir el commit1 ni ningún estado previo de commit1.
+
+Este comando admite muchísimas opciones:
+
+--name-only: nos muestra sólo los ficheros que han cambiado, pero no los cambios concretos!!
+
+--name-status: nos muestra los ficheros que han cambiado, y el estatus (de forma abreviada!!)
+
+--M detecta renames y genera salida simplificada que sólo nos muestra los renames efectuados en los ficheros... (nos los cambios realizados en los mismos).
+
+-w (= --ignore-all-space) sirve para que en la comparación entre ficheros, se ignoren las líneas que sólo difieran entre sí en el espaciado (whitespace). O sea, sólo muestra cambios "significativos".
+--ignore-space-at-eol: que ignore los espacios en los finales de línea....
+--ignore-blank-lines. This tells Git to ignore changes in lines that are all blank.
+-b | --ignore-space-change. This tells Git to ignore changes at the ends of lines and treat corresponding areas of whitespace changes as equivalent, regardless of whether they have the same amount of
+whitespace.
+
+--stat: añade una estadística. Se muestra de forma compacta cuántas líneas han cambiado en cada fichero, cuántas se han añadido y eliminado. O sea, muestra la estadística... no cada uno de los cambios!!!
+
+--color: muestra los tipos de cambio con colores distintos (representa cada tipo distinto de cambio con un color distinto).
+
+Delimitación a directorios o ficheros concretos:
+git diff --stat master~5 master nos compara estos dos commits, mirando absolutamente el estado de todo el repo (o sea, compara cada fichero, y nos muestra, de cada fichero, todos los cambios!!)
+
+¿Qué pasa si queremos limitarlo a algún directorio? ¿Cömo se hace?
+$ git diff --stat master~5 master Documentation
+Esto hace lo mismo, pero sólo busca y nos muestra los cambios habidos en los ficheros del directorio Documentation.
+
+¿Qué pasa si estamos interesados sólo en los cambios habidos entre ambos commits en un fichero concreto?
+$ git diff master~5 master Documentation/git-add.txt
+
+También podemos usar la opción pickaxe (-S), para (como en log) buscar cambios que incluyan la cadena especificada. Ejemplo:
+$ git diff -S"octopus" master~50
+searches the past 50 commits to the master branch for changes containing string "octopus"
+Git lists the diffs that contain a change in the number of times the given string is used in the diff. Conceptually, you can think of this as “Where is the given string either introduced or removed?” 
+
+Ejemplos:
+git diff fichero 
+Muestra todos los cambios realizados ene l fichero y que tenemos pendientes de meter en el stage (con el git add) O sea, muestra cambios unstaged. Observar que, si hemos hecho cambios pero ya están en el stage pues no nos aparecerá nada lógicamente.
+
+git diff --cached fichero / git diff --staged fichero
+muestra diferencias entre lo que ya está staged (y que por tanto irá al próximo commit) y la versión almacenada en el último commit realizado.
+Observar que si hemos hecho cambios, pero no los hemos metido en el stage, entonces, lógicamente
+git diff --cached fichero no nos va a aparecer nada...
+
+git diff HEAD fichero (muestra diferencias del fichero actual con el HEAD, o sea, el último commit realizado)
+
+git diff HEAD~1 HEAD fichero compara las versiones del fichero del último (HEAD) y el anterior (HEAD~1)
+también para comparar versiones entre distintos commits se pueden usar sus hash o etiquetas (obetenidos con git log)
+git diff hash_commit1 hash_commit2 fichero
+
+git diff hash_commit1 hash_commit2 nos muestra las diferencias entre los dos commits!!!
+(nos detalla todos los ficheros con sus diferencias)
+
+#diff visual!! herramientas!!
+git difftool es parecido, pero nos muestra esta información con una herramienta más visual...
+git difftool --tool-help nos mostrará las herramientas disponsibles en nuestro entorno..
+Además hay herramientas interesantes como http://meldmerge.org/
+Realmente cuando ponemos git difftool lo que pasa es que se ejecuta alguna de las herramientas que tenemos configuradas para mostrar el diff de forma visual.
+Entonces, podemos utilizar git difftool o un valor de configuración para elegir la herramienta que queremos utilziar.
+
+Algunas opciones: vimdiff, WinMerge, Meld, KDiff.
+
+¿Cómo hacemos, después de tener instaladas varias herramietnas, para seleccionar la que queremos utilziar!!!
+Varias formas:
+1) Especificando la herramienta con la opción -t (de tool)
+Ejemplo, git difftool -t meld
+2) El sistema, si no le decimos nada, utilziará la herramienta por defedcto suministrada.
+3) También podemos configurar el setting. Por ejemplo, si quisiéramos utilizar siempre vimdiff haríamos...
+git config --global diff.tool vimdiff
+Ahora, al hacer git difftool se utilziará vimdiff
+
+Por defecto, nos preguntará para cada fichero si queremos utilizar la herramienta de difftool.
+Si queremos que no nos pregunte podemos ejecutar el git difftool con la opción para que no pregunte, o grabar un setting para que no pregunte... Vemaos las dos opciones ...
+git difftool --noprompt    (habrá que escribirlo cada vez que ejecutemos el difftool)
+$ git config --global difftool.prompt false    (grabado para siempre, no habrá que ponerlo sino una vez!!)
+
+Git comes preconfigured to be able to work with a number of different tools for diffing. To see a list
+of these tools, you can run the command git difftool --tool-help.
+El listado no significa que estén en nuestro sistema, sino que git sabe como manejarlas y pasarle los datos. Habrá que instalarlas nosotros algunas de ellas (otras estarán instaladas con nuestro paquete git)
+Nos aparecen en el listado divididas, por una parte las que ya están instaladas, y por otra las que puede utilziar (pq sabe) poer no están disponibles de momento.
+
+Por ejemplo, imagina que queremos utilziar meld, pero no está instalada actualmente. Debermos:
+a) Instalar el paquete.
+b) decirle que queremos utilziar el meld, ya sea con la opción git difftool -t meld o grabándolo ya el setting con git config --global diff.tool meld
+b) Asegurarnos de que la herramienta esté en el path, o, más sencillo, 
+b')decirle a git el path de la herramienta.. en este caso sería así...
+$ git config --global difftool.meld.path c:\meld\Meld.exe (o donde sea)
+
+Hay incluso opciones para configurar el git para que utilcie alguna herramienta de las que no tiene conocimiento actualmente... (pg 123 professional git)
+
+
+# GIT RESTORE (nuevo apartir 2.23.0)
+git status nos da muchas pistas!!
+git restore --staged fichero: saca del stage el fichero especificado
+git restore fichero deshace los cambios hechos al fichero en el working directory (o sea, volvería a ser como era en el último commit) ;(cuidado, no habría forma de revertir estos último)
+
+
+
+# Recuperar Versiones previas
+Deshacer cambios en un archivo (o sea, recuperar un versión anterior de un archivo)
+
+Si hacemos git status nos da, como casi siempre, las instrucciones, en este caso, nos dice que para deshacer cambios (en un fichero) en el working directory usemo: git checkout -- nombre_fichero:
+
+git checkout -- nombre_fichero: recupera la versión del fichero que está en el último commit (por si hemos hecho cambio desde el último commit y nos arrepentimos).
+Cuidado, esto es peligros, pq deshace todos los cambios que hemos hecho, y no hay forma de revertirlo!!!
+Recodrdar que si hemos hecho un commit de algo, pues sí será recuperable, pero si no, nada!!!
+
+git checkout commit_hash nos transforme el wd en la versión del commit (o sea, vemos lo que había cuando se hizo el commit)ç
+Si, por ejemplo, estamos en main y volvemos a una versión anterior con el git checkout... cómo volver a la versión más actual?
+git checkout master  (o main, o como se llame la rama ) nos volverá a lo más reciente de la rama indicada!!
+git checkout commit_hash nombre_fichero: nos recupera la versión del fichero del commit con el hash indicado
+(para saber el hash utilizamos el git log , o mejor git log --oneline, ya que para el hash nos vale con indicar los 6 primeros caracteres...)
+git reverse commit_hash --no-edit lo que hace es "anular" el commit del hash, ... realmente lo que hace es ver lo que hicimos en ese commit y crear un nuevo commit que anule esos cambios... lo que conseguimos con eso, es anular ese commit pero dejar los cambios posteriores... o sea, no volvemos al commit anterior al especificado, porque si no perderíamos los cambios posteriores al commit defectuosos...
+O sea, git reverse commit_hash crea un commit NUEVO que revierte lo que hizo el commit que estaba mal, pero manteniendo los cambios de otros commits posteriores.!!
+o sea ....... commit malo .... commit bueno  lo que hace es añadir un commit nuevo que sea el inverso del malo al final de todos
+De esta forma, se mantiene los cambios hechos en el commit bueno, pero se anulan los del commit malo.
+
+
+# Deshaciendo cambios...
+Podemos deshacer 3 tipos de cosas.
+1) Deshacer cambios en el working directory antes del stage
+o sea, hemos trabajado en el working directory y hemos hecho cambios que no nos gustan... ¿cómo podemos volver a la 
+versión anterior guardada en el último commit?
+git checkout fichero , que lo que hace es volver a la verisón del último commit ( HEAD)
+
+otra opción es git reset --hard
+Por ejemplo, imagina que hemos modificado un fichero y creado otro nuevo (que por tanto está sin trackear)
+Cómo anular todos estos cambios?? pues con git reset --hard y luego un git clean -fallar
+COnviene ir haciendo un git status para ver si queda todo bien...
+Obs: git reset lo que hace es simplemente quitar del stage lo que hubiéramos añadido....
+git reset --hard lo que hace es cambio todos los ficheros trackeados a la versión del último commit
+Por supuesto, si además hubiéramos creado algún fichero nuevo...
+podríamos borrarlo nosotros o... mejor...
+git clean -f  (esto remueve todos los ficheros untracked)
+
+Resumen compacto:
+git reset --hard 	Reset tracked files to match the most recent commit.
+git clean -f		Remove untracked files.
+git reset --hard / git clean -f		Permanently undo uncommitted changes.
+
+
+Obs. importante: mucho cuidado con git reset y git clean pq hacen que los cambios anulados no sean recuperables!!!
+Obs: git reset deshace cambios en el stage y en el working directory (sin posibilidad de recuperarlos!!)
+git reverse deshace commits... (sin perder el historial!! con lo que podemos volver a acceder a las versiones anteriores)
+análogamente git status nos habla de los cambios en el stage y en el wd
+git log nos habla de los commits... (el histórico con todas las versiones grabadas)
+
+2) Deshacer cambios en el stage antes del commit
+Ahora resulta que hemos hecho cambios y los hemos puesto en el stage (INDEX) con un git add
+Pero resulta que deseamos deshacer todos los cambios...
+Pues ahora deberemos hacer:
+a) Lo que nos indica el git al hacer el add, nos indica como quitar el fichero del INDEX
+"git restore --staged <file>..." to unstage 
+me da que con git reset (sin el hard) tb se quita todo del stage...
+quiz´s la otra versión git restore --staged es para utilziar con ficheros individuales.
+
+b) después de este comando ya no tenemos el fichero con los cambios en el stage, pero sigue con los cambios no deseados...
+ahora simplemente podremos hacer
+lo de antes: git checkout fichero...
+Obs. Si directamente hiciéramos el git checkout fichero tb volveríamos a la versión del HEAD... pero
+seguirían pendiente el fichero en el INDEX (con los cambios no deseados) para actualizar al hacer el commit.
+
+También creo que podríamos, más sencillo, hacer simplemente el git reset --hard, creo que sería igual de válido que antes
+y luego hacer un git clean -f para si hubiéramos creado algún fichero nuevo...
+ 
+
+3) Deshacer cambios ya después del commit
+Hemos hecho un commit y deseamos que un fichero vuelva a la version de un commit anterior...
+Tendremos varias opciones, por ejemplo:
+git revert hash_commit nos crea un nuevo commit que anula los cambios efectuados en ese commit (es como el inverso)
+Obs importante: no se borra el commit (ya que desaparecería el histórico), sino que se crea otro totalmente contrario que lo anula
+Obs. que a lo mejor el commit que queremos anular fue hace tiempo, no tiene pq ser el último que tengmoas... lo que pasará es que, independientemente de cuando haya sido el commit, se genera un nuevo commit aplicando justos los cambios contrarios que lo anulan.
+
+git revert hash_commit_a_revertir : esto muy útil sin son varios ficheros los afectados
+obs que si el commit fuera justo el último, podemos hacer:
+git revert HEAD
+se puede hacer también de más formas; lo bueno del git reverse es que no se pierde el historiall
+Si le añadimos la opcion --no-edit no hace falta añadir el mensaje, lo hace el solo añdiendo: Revert ".... "
+
+4) Se puede hacer tb con git checkout  (ver el apartado de versiones previas)
+
+
+
+# GIT REMOTE
+Observar que remote hace referencia a cualquier repo distinto del actual (puede incluso ser otro repo local!!)
+Observar que, si hemos clonado nuestro repo de otro, pues automáticamente tendremos otro repo remoto, con alias "origin"
+Si hemos creado nuestro repo desde 0, pues, inicialmente no tendremos ninguno...
+Podremos tener varios...
+git remote: nos da la in
+formación sobre los repos remotos asociados a nuestro repo local...
+
+Lo mejor es utilizarlo con la opción verbose, o sea:
+git remote -v
+Ejemplo de posible salida....
+origin https://github.com/oslugr/repo-ejemplo.git (fetch)
+origin https://github.com/oslugr/repo-ejemplo.git (push)
+
+Nos da el alias (en este caso origen) de los repos que se utilizan cuando hacemos fetch (para descargarnos datos) o push (para empujar nuestras nuevas versiones al repo origen).
+
+Observar que podemos agregar nuevos (aunque imagino que no será lo normal)
+Ejemplo para añadir uno nuevo:
+git remote add ALIAS_DEL_REPOSITORIO DIRECCION_DEL_REPOSITORIO
+
+Podremos quitar repositorios con git remote rm alias
+Podremos cambiar el alias: git remote rename antiguo_nombre nuevo_nombre
+git remote show alias nos da información adicional (mejor que la opción -v) sobre el repo alias...
+
+git remote show alias nos da información más detallada de ese repositorio remote
+Las ramas que tiene, cuantas estamos siguiendo, que pasa si hacemos git pull o git push por defecto, 
+
+# AYUDA
+Tenemos dos formas:
+a) Versión abreviada, que nos muestra una lista corta de opcioens con breves explicaciones, útil para refrescarnos la memoria. La invocaremos con git comando -h  (ejemplo, git commit -h)
+b) Versión completa, nos muestra todo, la página man.
+Se puede invocar de dos formas: git comando --help o git help comando.
+Ejemplo: git commit --help 		o 		git help commit
+
+
+# Borrado de ficheros, renombrado y mover de sitio (mv)
+La ventaja que tienen para mover (q sirve para mover y renombrar) y borrar (respecto a si lo hacemos con el explorador de windows, etc) es que aparte de ejecutar el comando, automáticamente tb añade estos cambios al stage (INDEX), o sea, 
+automáticamente hace ya el git add adecuado... con lo que nos ahorraremos hacer luego el git add (y evitamos recordar hacerlo)
+COnviene no hacerlo manualmente, porque si no 
+git rm fichero: borra físicamente el fichero, y aparte añade este cambio al stage para que cuando hagamos commit se actualice y dejemos de seguir al fichero.
+O sea, mejor explicado, borra el fichero del repositorio (en su versión actual) y también del working directory...
+MUY IMPORTANTE:
+Removing a file from your directory and the index does not remove the file’s existing
+history from the repository. Any versions of the file that are part of its history already
+committed in the repository remain in the object store and retain that history.
+O sea, el fichero sighe existiendo en el repo para las versiones anteriores, pero en la actual versión ya no está.... Siempre lo podemos recuperar pq sigue almacenado correspondiendo a versiones anteriores (o distintas del repo).
+
+Hay dos opcioens para git rm:
+La versión normal (qitar del wd y del repo)
+La versión --cached o --staged que "simplemente" borra el fichero del stage ...
+
+Lo que no hace git es borrar físicamente y ya está.., esto no lo hace... hace las cosas bien.
+
+Observar que si nosotros simplemtne borramos un fichero (sin utilizar el git), esto no borra el historial del fichero en el repo (estarían almacenadas todas las versiones del objeto).
+ Por eso hay que evitar borrarlo con el admin de ficheros o las utilidades del sitema...
+ 
+ Por supuesto, para borrar un fichero con git rm, tiene que estar en el repo (o sea, no sólo estar físicamente en el directorio, sino estar siguiendolo).
+ 
+ Ejemplo: creamos un fichero nuevo fichero1, pero sin añadirlo...
+ si hiciéramos ahora, git rm fichero1 nos daría error, porque no hay nada que borrar del repo, el objeto no está en el repo aún... simplemente podríamos borrarlo con las utilidades del sistema.
+ 
+ O sea, git rm es tanto una operación física (que involucar al wd) como del index (indica meter esos cambios relativos a objetos conocidos en el index).
+
+Si por ejemplo, ahora hiciéramos, con ese fichero nuevo, git add fichero1...
+ya como está en el index podríamos hacer git rm fichero1 (lo borraría tanto del repo como del wd).
+También podríamos simpelmente hacer git rm --staged para quitarlo del index...
+
+
+Ejemplo: queremos cambiar de nombre un fichero y hacer el commit para capturar el estado del repo
+Opción 1)
+$ mv foo.html bar.html
+$ git rm foo.html   (esto hace que ya el repo deje de seguir al fichero... )
+rm 'foo.html'
+$ git add bar.html (añadimos seguimiento del nuevo fichero)
+$ git commit -m "Moved foo to bar"
+
+Opción 2)
+$ git mv foo.html bar.html
+$ git commit -m "Moved foo to bar"
+
+Observar que cuando hacemos esto, por cualquiera de los DOS MÉTODOS, el git se va a dar cuenta de que es el mismo fichero y nos va adecir, que hemos movido el fichero...
+Con el método 2 está claro, pero con el método 1 (no aconsejable y largo) también se da cuenta pq el nuevo objeto tiene el mismo hash que el antiguo...
+
+
+git rm --cached fichero lo que hace es lo borra del index, o sea, como si no estuviera supervisado en el repo, pero no físicamente. 
+O sea, git rm --cached fichero lo que hace es que, deja físicamente el fichero pero deja de trackearlo...
+Es evidente, git rm sirve para remover... en este caso, qitar de la zona de cacheados (index) los ficheros que digamos...
+O sea, git rm es quitar del seguimiento... git rm --cached es quitar de la caché (del index)
+
+Observar que esto lo que hace realmente es dejarlo en el stage, pendiente, para cuando hagamos el commit
+
+O sea, con git rm lo que hacemos es decirle, que cuando hagamos el commit borre el fichero y lo quite del index
+con git rm --cached hace que cuando hagamos el commit no borre el fichero, pero lo considere ajeno al repo, nos va a decir que 
+está untracked... esto suele ser útil si hemos hecho ya el commit y nos arrepentimos de que algún fichero esté, por ejemplo
+pq el fichero está en un estado cutre, y vamos a subir todos los cambios al repo y no queremos que lo vean ese fichero
+
+otra opción equivalente de hacer el git rm --cached es hacer git reset HEAD fichero
+HEAD recuerda que es como llamamos al último commit
+
+git rm podemos darle expresiones tb...
+git rm \*~  
+git rm log/\*.log
+
+Y qué pasa si hemos hecho git rm fichero1 (con lo que borra el fichero del wd y tb del repo)
+y nos arrepentimos??
+No podemos hacer git add fichero1 porque da error... pero es fácil recuperarlo, simplemente...
+git checkout HEAD -- data
+O sea, chequeamos el fichero data buscándolo en el último commit de la rama actual (o sea, buscamos el objeto en HEAD), y todavía existe, pq en el repo no se pierde nada del histórico..
+AL hacer git rm lo quitamos del repo en su versión actual, claro, pero sigue existiendo en las anteriores...
+SImplemente tenemos que decir que queremos chequear el fichero data con la versión del repo especificada (en este caso ponemos HEAD; podíamos tb si no fuera la úlitma versión, el hash del commit que contiene la versión que nos interesa=).
+
+--------------------
+Si queremos mover (o cambiar de nombre) un fichero, podríamos combinar, después de cambiar físicamente el nombre dle fichero nosotros, hacer un git rm con el antiguo nombre, y luego un git add con el nuevo nombre.
+Más sencillo es git mv ...
+O sea, dos opciones.
+1) $ mv data mydata
+$ git rm data
+$ git add mydata
+2) $ git mv data mydata
+
+Observar que si ahora hacemos git log mydata no aparece mucho ene l historial, tan sólo el último cambio... para ver todo el historial del fichero debemos hacer...
+git log --follow mydata; ahora ya nos aparecen todos los cambios completos
+
+Conclusión: al renombrar no se pierde nada del histórico!!!
+
+En git cuando movemos un objeto de sitio, realmente no pasa nada, ya que el objeto (representado con el blob y su hash) no cambia nunca!! Lo único que se actualiza es el árbol con el detalle de donde está localizado y su nombre de fichero (y su hash que no ha cambiado).
+
+
+En culaquiera de los casos sucedería lo mismo... se quitaría stuff del index, se añadiría newstaff, matenemos el contenido en el alamceén que ya teníamos, y lo reasociamos...
+
+
+# Conflictos
+Normalmente los conflictos suceden cuando dos usuarios han modificado la misma línea. Nos va a ocurrir cuando hagamos el push.
+Nos lo va a denegar y nos aconsejará que hagamos un pull. Cuando hacemos el pull tendremos que decirle como resolver los conflictos.
+Ejemplo, generé un fichero e hice cambios en la primera línea en local y en github... hice los commits y luego intenté hacer
+push, me dijo que no se podía, y que intentará hacer primero el pull 
+Al hacer el pull me dijo que no se podía y que arreglara los cambios... lo que hizo es que en el fichero conflictivo escribió
+esto:
+
+<<<<<<< HEAD
+##Hola esto es un comentario para generar un conflicto, esto está hecho en local
+=======
+#Hola estoy editando una línea para generar un conflicto.... Esto está hecho en Github
+>>>>>>> bce2163b7af597b59aeaccd052481068ecb972a2
+
+
+La primera parte representa la línea conflictiva en mi commit (HEAD)
+La segunda parte, después del igual, representa la misma línea en el otro repo (lo qu eestá en >>>>> es el hash del commit en github
+
+Para arreglaro lo que tenemos que hacer es eliminar las marcas de los conflictovs (<<<< === >>>) y elegir con lo que nos quedamos para esa línea...
+Ahora ya, después de hacer el git add y el commit simplemente haremos el git pull (creo) y luego ya podremos hacer el git push
+para actualizar el sitio remoto con nuestros cambios más recientes.
+
+
+Retroceder al pasado
+git reset --hard hash_del_commit..: nos devuelve al estado del commit especificado, como si volviéramos atra´s en el tiempo
+cuidado, es como si los commits posteriores no hubieran existido nunca!!
+No es nada aconsejable, porque perdemos el historial
+el mucho mejor utilizar del git reverse commit_hash --no-edit que lo que hace es crear un commit nuevo que revierte el commit que queremos anular... con esta técnica conseguimos lo mismo, pero sin borrar ningún commit, queda constancia de todo lo que ha pasado!!!
+
+git show hash_commit nos muestra información detallada con los cambios que hicimos en un commit.
+además, si utilizamos git show hash_comit:ruta_a_fichero_del_repo nos muestra el estado de como estaba el fichero...
+TRUCO!!por supuesto, si redirigimos la salida a otro nuevo fichero (donde queramos, incluso fuera del repo) podemos crear la versión del fichero que había en ese momento, ¡¡¡pero sin perder la actual!!!!!!!!!
+Ejemplo: git show hash_commit:ruta_archivo_del_repo > ruta_archivo_copia
+Si hacemos git show sin añadir el hash, se sobreentiende que queremos la info detallada del último commit (del HEAD supongo).
+
+Flujo de trabajo típico para un usuarios
+1º git pull para estar actualizado...
+2º trabajamos en local y cuando tengamos algo interesante ya hacer el git add .
+3º hacer el commit: git commit -am ( es como -a -m)
+4º git push para actualizar el repo principal...
+observar que conviene hacer el git commit con la opción -a (all) porque revisa todos los directorio y subdirectorio,
+y es como si hiciera un git rm sobre los ficheros que hemos borrado (en principio, el git add . no detectaría los borrados,
+aunque quizás en las últimas versiones sí lo hace).
+
+Observar que el commit se suele hacer cuando hemos hecho un cambio más o menos significativo que creemos que es interesante ya Se suele hacer cuando deja ya el código en estado sano.
+El push cuando creemos que aporta ya algo interesante al repo.
+
+# TAGS:
+Sirven para añadir una etiqueta con la que identificar las distintas versiones (commits), al menos las significativas, sin tener que escribir el hash...
+Los tags sirven para marcar versiones o hitos en el desarrollo, es un alias que permite referenciar más rápidamente un commit en vez de utilizando su hash....
+Ejemplo:  git checkout tag   es equivlanete a git checkout hash, pero es muchísimo más cómodo de escribir!!!
+
+Listar los tags...
+git tag -l o git tag --list nos lista todas las etiquetas que tenemos definidas en nuestro repo.
+git tag también hace lo mismo (porque si no damos ninguna opción se sobreentiende el -l)
+Podemos listar o buscar por tipos específicos de tags...
+git tag -l "v1.8.5.*" por ejemplo...
+
+Tipos de tags: ligeros y anotados (annotated tags)
+Ligeros: simplemente son como un puntero a un commit específico.
+Anotados: se almacenan como cualquier otro objeto en la base de datos, tienen checksum, email, date, ... , y un mensaje asociado. Se recomiendan usar los anotados...  (annotated tags!!)
+
+Creación de annotated tags: 
+git tag -a etiqueta (hash_commit) -m "mensaje "   
+Obs: si no añadimos la opción -m ",..." se nos abrirá el editor para que escribamos la info del detalle para la etiqueta
+Obs: si no ponemos el hash_commit se referirá al commit actual (HEAD)
+Ejemplo: git tag -a v0.1 2bc1254 -m "v0.1"
+
+git show tag nos muestra la información del tag junto la del commit asociado
+
+Observar que ahora, si hacemos git log, cuando nos aparece la información del commmit, al lado del hash nos aparece tb la etiqueta...
+
+Creación de tags ligeros (lightweight)
+git tag tag_name hash_commit
+ahora si hacemos git show tag_name tendremos mucha menos información que antes.. simplemente veremos la info del commit
+
+Eliminación de tags...
+git tag -d tag_a_eliminar nos elimina la etiqueta.
+(observar que solo la borra de nuestro repo, no de los remotos lógicamente)
+Si queremos borrar un tag del repo origin, por ejemplo, haríamos
+git push origin --delete tag_name
+
+
+Obs: podemos añadir varios tags a un mismo commit (aunque quizás no tenga ninguna lógica)
+Obs: creo que hay limitaciones en cuanto a tamaña, etc de los tag...
+
+sharing tags:: normalmente cuando hacemos push la información de los tags no se empuja...
+hay que hacerlo explícitamente... es como cuando queremos hacer el push de una rama concreta...
+Ejemplo: git push origin tag_name
+Si queremos todas sería: git push origin --tags
+Cuando alguien hace pull o clone, autoáticamente cogerá la info de las tags.
+
+Podemos, como con cualquier objeto, ver el contenido del objeto tag...
+git cat-file -p hash...
+Pero, ´¿cómo averiguamos el tag??
+Sencillo... git rev-parse etiqueta...
+Ejemplo... tenemos etiqueta V1.0
+1º avergiuamos su hash...
+$ git rev-parse V1.0
+6b608c1093943939ae78348117dd18b1ba151c6a
+Luego mostramos el objeto...
+$ git cat-file -p 6b608c
+object 3ede4622cc241bcb09683af36360e7413b9ddf6c
+type commit
+tag V1.0
+tagger Jon Loeliger <jdl@example.com> Sun Oct 26 17:07:15 2008 -0500
+Tag version 1.0
+
+#GIT ALIASES
+Sirven para poner alias a comandos del git, y con ello nos facilita el trabajo.
+Se utiliza cuando falta algún comando, o queremos utilzar opciones mas rápidamente...por ejemplo...
+git config --global alias.co checkout, hace que ahora, globalmente, cuando hagamos git co sea como git checkout...
+git config alias.unstage 'restore --staged' hace que, en el repo actual, cuando hacemos git unstage sea como git restore --staged
+$ git config --global alias.show-graph \
+'log --graph --abbrev-commit --pretty=oneline'
+
+Si queremos hacer un alias para una herremienta externa, debemos utilziar !
+git config --global alias.visual '!gitk': esto invocará al shell!!
+Realmente se puede generalizar más todavía!!!
+El uso general sería "! f() { do some processing }; f"; además podemos referirnos a los argumentos adicionales utilziando $1 (primer argumento), $2 etc. (aunque cuando lo utilicemos debemos preceder el $ con \, quedando \$)
+
+Ejemplo: $ git config --local alias.scopelist "! f() { echo 'global settings'; git config
+--global --get-regexp \$1; echo 'local settings'; git config --get-regexp \$1; }; f"
+Ahora, cuando hagamos git scopelist name lo que hará será:
+1. Echoes out a global settings header
+2. Uses git config’s --get-regexp option with a global qualifier to search for the value that is passed in
+3. Echoes out a local settings header
+4. Uses git config’s --get-regexp option with a local qualifier to search for the values that are passed in
+
+Ejemplo 2: The following example will show you a simple way to dump out the contents of a particular scope
+into a file. This illustrates having two positional parameters. In this case, the alias will do the following
+1. Echo out a header.
+2. Issue a git config command at the appropriate scope.
+3. Dump the values from step 2 into a separate file.
+
+Sería así!! 
+$ git config --local alias.dumpvalues "! f() { echo 'copying config' \$1; git
+config --list --\$1 > \$2; }; f"
+
+
+
+
+# RAMAS (branches)
+Las ramas son muy sencillas y rápidas de crear en git (a diferencia de otros sistemas).
+Son simplemente una referencia a un commit... esta referencia se va actualizando cuando creamos un nuevo commit dentro de esa rama, de forma que siempre apunte al último, a la "punta" de la rama...
+Se guardan en refs/heads... por ejemplo refs/heads/branch1...
+Una rama es simplemente un puntero móvil a un commit.
+Son referencias, se guardan cada una de las ramas en el directorio .git/refs/heads y simplemente son un fichero, con nombre el de la rama, cuyo contenido es el SSH de 40 caracteres con el hash del commit al que apuntan!! Ya está!!
+
+Observar que, al crear una nueva rama podemos hacerlo de forma jerárquica, para así dar estructura...
+Por ejemplo, podríamos crear las ramas para arreglar bugs como
+bug/pr-1021 o bug/pr-1931 y así tener todo más ordenado...
+
+Observar que en cada momento habrá (como mucho) una rama activa, que es la que determina qué es lo que estamos viendo en el working directory
+
+Además esta rama activa será habitualmente un operando implícito de muchos comandos, por ejemplo
+
+Una vez que hallamos ramificado un repo en un punto, cada commit se aplica a la rama en la que estemos colocado, lógicamente, y se actualiza el puntero de la rama para que siempre apunte al último commit realizado en ella (apuntará al "tip" o "head" de esa rama)
+
+(observar que una etiqueta es tb. una referencia a un commit, pero es fija, no se actualiza)
+
+Cada vez que hacemos un commit en una rama, el puntero de la rama se actualiza para apuntar a la punta de la rama, o sea, su contenido se cambia y se pone el ssh del último commit de la rama...
+A branch in Git is actually a simple file that contains the 40 character SHA-1 checksum of the commit it points to, branches are cheap to create and destroy. Creating a new branch is as quick and simple as writing 41 bytes to a file (40 characters and a newline).
+Recordar además, que cada commit, guarda, entre otras cosas, un puntero al commit que le precede... por eso, desde la punta de una rama podmos recorrer desde el último commit a los anteriores.
+
+Suele haber una rama principal que se llama master o main, pero realmente es una rama normal, lo único q si no nos molestamos en personalizar el nombre al crear el repo pues la rama se llamará así.
+
+git branch rama: nos crea la rama (aunque no nos coloca en ella, no nos hace el checkout)
+Lo único que ha sucedido, realmente, es que se crea un nuevo puntero para esa rama; el puntero inicialmente va a apuntar al commit en el que estamos actualmente, pero luego se irá moviendo...
+Eje. git branch rama_nueva    o git branch prs/pr-1137 (si queremos dar estructura a las referencias)
+
+Realmente el comando es git branch rama_nueva starting_commit, pero, si se omite, el starting_commit será la punta de la rama actual. Hay un puntero especial que es el HEAD, es un puntero a la rama local en la qu eestamos actualmente. 
+
+Observar que al hacer git branch, poco sucede, simplemente se añade otra referencia que apunta a un commit, ya está, es realmente instantaneo...
+
+# cómo hallar dónde se creó una rama: git merge-base
+Observar que git no guarda los datos del commit en el que se creó la rama y se creó el fork... pero podemos referirnos a los commits anteriores con , por ejemplo, dev~5.
+Si queremos encontrar el commit en el que se creó una rama, el punto donde confluye con la rama padre, el commit donde se creó (el merge-base) podríamos hacer...
+$ git merge-base original-branch new-branch
+
+Realmente da igual el orden... simplemente git merge-base rama1 rama2 nos da el punto een el que convergen...
+
+Duda: qué pasa si hay varios???
+
+Ejemplo:
+
+estamos en master... en el commit A
+creamos una nueva rama alt y nos colocamos allí
+hacemos dos o 3 commits en alt ... llegamos al commit B
+volvemos a mater y hacemos dos o tres commits... y llegamos al commit C
+
+Recordemos que ambas ramas confluyen en A, apartir de este punto cada rama sigue con su propia historia...
+Git no guarda en que commit se creó la rama alt (en nuestro caso, en A)
+Para hallar A, simplemente hacer git merge-base master alt o git merge-base alt master (da igual)
+
+Para cambiar a otra rama (actualizar la posición del HEAD a otra rama) haremos
+git checkout rama. Esto hace que el HEAD apunte ahora a la punta de la rama, al puntero de la rama. 
+Bueno, otra cosa importantísima que hace el checkout es que actualiza el working directory para que tenga la información del commit al que apunta el HEAD.
+
+A partir de git 2.23 podemos usar también git switch para cambiar a otra rama (equivalente a git checkout rama).
+
+Estas dos acciones juntas se pueden resumir con...
+git checkout -b nueva_rama: crea la nueva rama y nos coloca la nueva_rama. Equivale a dos acciones:
+1) git branch nueva_rama: crea la rama, y copia todos los ficheros de la rama en la que estamos a la nueva
+2) git checkout nueva_rama: nos coloca en esta nueva rama
+En esta rama podamos hacer lo que queramos con los ficheros... que los principales no van a ser afectados...
+También se pueden hacer estas acciones combinadas con el comando equivalente (git > 2.23)
+git switch -c (de create) rama o git switch --create rama
+
+
+Listado de ramas!!!
+git branch:  nos listará las ramas locales creadas, marcando con * dónde estamos ahora (o sea, nos muestra la rama a la que apunta el HEAD).
+(puede ser la punta de una rama, o un commit anterior de una rama...)
+git branch -r (o --remote) nos lista las remote tracking branch (o sea, no todas las remotas, sino sólo las traqueadas que están asociadas automáticamente con locales nuestras)
+git branch -a (o --all) muestra todas (locales y remote tracking branches)
+git branch --remote es lo mismo pero en el remoto  
+git branch --all nos muestra todas las ramas, las locales y las remotas (buena, la información de los remotos que nos aparece es la que conoce el git de sincroniaciónes anteriores con fetch, no lo pide q se actualice con eeste comando).
+git branch -v: nos muestra las ramas, con su último commit cada una
+git branch --merged muestra las ramas que se han unificado con la rama en la que estamos
+git branch --no-merged nos muestra las ramas que NO se han unificado con la rama actual
+(tb. nos muestra la actal con *)
+Podemos usar git branch --merged para ver las ramas que ya se han unificado y borrarlas si creemos que ya no son necesarias, que sería lo normal.
+
+git branch -d rama_a_borrar se utiliza para borrar ramas...
+
+Obviamente, si hacemos git branch --no-merged, al intentar borrar con git branch -d algunas de estas ramas no unificadas nos va a dar error (pq hemos hecho un trabajo que no se ha unificado y git quiere asegurarse que no metemos la pata).
+
+Si de verdad queremos borrar esa rama no unificada, podemos forzar el borrado con
+git branch -D rama
+
+Observar que, por defecto, git branch --merged / no-merged nos van a dar info de la rama actual. Si queremos ver la información repsecto de otra rama, haremos...
+Por ejemplo, sin pasarnos a master, podemos ver las ramas que no se han unificado...
+git branch --no-merged master
+
+Otra opción interesante con switch es git switch - que nos chequea en la rama anterior chequeada.
+
+cambiar le nombre de una rama local
+git branch --move bad-branch-name corrected-branch-name
+
+cambiar nombre ahora en el repo remoto:
+1) git push --set-upstream origin corrected-branch-name  (primero empujamos la rama local, ya con el nombre corregido).
+git branch --all observaremos que tenemos en el remoto la rama con el nombre antiguo, y con el nombre correcto... Ahora..
+2) git push origin --delete bad-branch-name
+
+# RAMAS
+Normalmente las ramas van a ser vías de desarrollo, experimental ... y cuando ya esté completo haremos un merge con la principal...
+Así, las versiones intermedias, no terminadas, o que no sabemos si va a funcionar, no las volcamos a la rama principal, sino que trabajremos en ella por otro lado, sin entorpecer el desarrollo principal...
+
+git branch nos lista las ramas (en la que tenemos activada, o sea, la que está chequeada (checkout) que es la que nos va a crear con su versión el working directory, nos aparece el *)
+Por ejemplo, si nos aparece main * significa que el snapshot más reciente (el commit más reciente) de la rama main es el que se muestra en el working directory.
+
+git branch rama sirve para crear la rama
+Realmente sería git branch nueva_rama commit: o sea, crea la rama a partir del punto especificado, lo que pasa, que si no especificamos el commit, pues se creará en el HEAD.
+
+Ejemplos: git branch rama nuev_rama: crea una nueva rama justo en el commit actual.
+git branch rama_nueva main^   crea una nueva rama en el paso anterior a la punta de main.
+
+git checkout rama nos coloca en esa rama
+
+Obs: en el working directory (wd) nos va a aparecer lo que tengamos en la rama actual. Por eso, al hacer cualquier
+listado del contenido del directorio de trabajo, nos aprece tambie´n entre paréntesis la rama en la que estamos.
+Esto se consigue pq cuando hacemos git branch rama lo que hace el git, entre otras cosas, 
+es cargar el contenido adecuado mirando el último commit del head de esa rama... eso es lo que veremos en el wd
+
+git checkout -b rama nos crea una rama y , además nos coloca en esa nueva rama creada (son dos operaciones en una: el git banch y el git checkout)
+
+obs importante: si hacemos git log en la nueva rama, nos aparecerá todo el historial de commits que heredó de la rama... o sea, git log recorre hacia atrás, pero no se para en el commit donde se originó la rama, ya que git ni siquiera tiene guardado donde fue, sigue hasta atrás hasta el principio de los tiempos... para git la rama es todo, desde su punta, hasta que no pueda ir más hacia atrás (o sea, no desde su punta hasta donde se ramificó...) principal (o la que fuera) desde la que se creó...
+O sea, si nada más hacer la rama, hacemos un git log nos aparece todo el historial heredado de la rama madre...
+La única diferencia es que ahora el último commit aparece como HEAD -> rama , en vez de como HEAD -> rama_original
+
+¿QUé pasa si queremos chequearnos a otra rama y tenemos cosas pendientes en la actual?
+Es muy importante, antes de cambiar a otra rama, que el wd actual (de esa rama) este limpio, o sea,
+que esté todo ok (nada sin trackear, todo añadido con add y hecho el commit con los cambios) pq si no
+se intentará hacer un merge de esas cosas pendientes a la rama destino... y puede fallar todo... si no lo consigue nos dará
+un error y no nos dejará... se puede forzar con -f (con lo que si no consigue el merge se perderán los cambios hechos en la rama)
+De todas formas, aunque pudiera, no tiene sentido hacer el switch sin haber hecho primero el commit para tener la rama ok(
+(o sea, el wd en estado clean))
+
+Ejemplo
+$ git checkout dev
+error: Your local changes to the following files would be overwritten by checkout:
+NewStuff
+Please, commit your changes or stash them before you can switch branches.
+Aborting.
+
+Lo que debemos hacer, simplemente, es, antes de salir, añadir los cambios al index Y hacer un commit, para dejar todo ok en la rama actual, antes de cambiar a otra...
+
+Otras opciones son: usar el stash, o mergear estos nuevos cambios pendientes a la nueva rama a la que queremos chequearnos... o sea, los cambios pendeintes que tengamos en nuestro wd se van a incorporar (merge ) a la nueva rama...
+
+Por ejemplo, si estamos en main, a medias, y queremos pasarnos a dev, podemos hacerlo como hemos visto antes, o 
+git checkout -m dev (o sea, pasar a rama dev pero incorporando los cambios hechos en el wd)
+Observar que no hace merge realmente, no se crea ningún nuevo commit, lo que hace es que, todos esos cambios los transpase (intentando mergear con lo que hay en la rama a la que vamos) al wd. Si hubiera conflictos, simplemente arreglarlo editando los ficheros.
+
+# git show-branch Viendo ramas (info detallada) (muy interesante!!)
+The git show-branch nos muestra información más detallada que git branch, mostrando también los commits que contribuyen a una o más ramas (en orden hacia atrás). Nos da una visión más completa del repo...
+Como en git branch, podemos usar los modificadores, -r, -a, --more=...
+
+Ejemplo:
+$ git show-branch
+! [bug/pr-1] Fix Problem Report 1
+ * [dev] Improve the new development
+  ! [master] Added Bob's fixes.
+---
+* [dev] Improve the new development
+* [dev^] Start some new development.
++*+ [master] Added Bob's fixes
+
+La salida se muestra en dos secciones, separadas por ---
+
+a) La sección de arriba nos muestra las ramas (entre corchetes), con un ! o un * (para la rama actual), y nos muestra también el commit de la punta de cada rama...
+Además este símbolo (! o * para la rama actual) va a aparecer en la columna que reservamos para esa rama.
+
+En el ejemplo anterior, la rama bug tiene reservada la 1ª col, la rama dev la 2ª y la rama master la 3ª.
+Esto se va a utilizar a la hora de mostrar los commits, en la sección de abajo.... 
+
+b) La sección de abajo muestra un historial de commits, y nos dice qué commits están en qué rama utilizando las columnas definidas en la sección 1...
+El commit estará en una rama si aparece un símbolo (*, + o - ) en la columna reservada para esa rama
++ significa que el commit está en esa rama
+* significa que el commit está en esa rama (que además es la activa)
+- es lo mismo, está en esa rama, pero no está indicando además que es un merge commit.
+
+En el ejemplo anterior:
+Los dos primeros commits, sólo tienen un símbolo (que es *) en la primera columna.
+Esto nos indica que estos dos commits sólo están en la rama de la columna 1 (bug...)
+Además, el commit más reciente se muestra primero (Imrpove the new developmente, que es dev) y luego el que le sigue (Start some new developmente, que es el commit dev^).
+Luego se muestra el commit "Added Bob's features", que está en las 3 ramas, pq las 3 columnas tienen símbolo
++*+. Además, el commit está en la punta de master.
+
+git show-branch recorre todos los commits de todas las ramas que se muestran, en sentido hacia atrás como siempre, pero se para en el commit más reciente que está presente en todas las ramas mostradas!!!
+O sea, se para en el origen común... se supone que con esto nos bastaría para conocer la estructura...
+
+Si con esto no nos bastara y quisiéramos ir más atrás en la parte ya común a todos las ramas, pues haríamos...
+git show-branch --more=num (esto indica que, cuando se llega al commit común, siga todavía para tras nun commits...
+
+Por supuesto, según la situación, este comando podría darnos demasiada información.
+Si queremos limitarnos a ramas concretas podemos hacerlo nombrando las ramas que nos interesan... 
+Ejemplos:
+$ git show-branch bug/pr-1 bug/pr-2
+$ git show-branch bug/*
+
+# MERGE
+Unifica dos (lo normal) o más ramas. Esto ocurre a nivel local (ambas ramas deben estar presentes en el repositorio desde donde queremos unificar). (otra cosa es que como paso previo tengamos que traernos de un remoto alguna de esas ramas).
+
+Procedimiento:
+0. Importante: para evitar problemas, importante (aunque no 100% necesario) que ambas ramas estén en un estado clean, todo actualizado con su commit.
+Observar que si tenemos un wd "dirty" y los ficheros cambiados pues no son conflictivos, entonces no hay problema, se hará el merge y seguiremos teniendo el estado que había de estos ficheros, no perderemos nada... pero es mejor para que todo sea más fácil que todo este "clean"
+1. Chequernos a la rama donde queremos unificar (la otra no alterará su historial).
+Por ejemplo, git checkout main
+2. git merge experimental_rama : unifica la rama experimental con la main... incorporando un nuevo commit (o no, si basta con un fast forward merge) que unifica ambas.
+
+Al ejecutar el comando, pueden suceder varias cosas:
+
+CASO 1: Cuando los cambios efectuados en una rama no generan conflicto con los de otra, git calcula el resultado y genera un commit que representa el nuevo estado unificado. EN este caso, el wd se actualizará para reflejar los cambios resultantes.
+
+CASO 2: Existe un conflicto: en este caso git no resuelve la disputa; actualizará en el wd los ficheros no conflictivos y tb nuevas versiones de los conflictivos (pero que incorporarán las distintas posibilidades marcadas con las secciones <<<<< ===== >>>>). Los ficheros modificados pero resueltos sin problemas estarán añadidos automáticamente al STAGE (preparados ya para el commit) mientras que los conflictivos estarán marcados como unmerged en el STAGE. Para hacer la reconciliación deberemos:
+a) Hacer git diff para localizar mejor los cambios (si el fichero es corto no hace falta). Observar que este git diff no va a ser en formato tradicional, (secciones <<<<< ==== >>>>) sino que como es un diff combinado (o sea, se hace comparando el fichero de varios or´ginees distintos) se añaden + y - adicionales... Pero el formato es el mismo!!
+b) editar estos ficheros y elegir cómo quedemos que quede mirando en las seccioens <<< === >>>>
+c)Hacer el git add para desmarcar los ficheros como unmerged y marcarlos para añadirlos al commit normal. Observar que el resto de ficheros que se modificaron sin conflictos ya se habían añadido automáticamente al stage desde que intentamos el merge.
+d) Hacer un commit. (el mensaje por defecto será el de Merged rama...)
+
+Observar que si son varios ficheros, podemos ver todos los ficheros conflictivos (que están marcados con unmerged en el stage) utilizando el comando git ls-files -u
+
+
+----------------------------------------------------------------
+#ejemplo del git diff para los conflictos en los merges...
+Ejemplo: supongamos que tenemos el fichero hello
+Versión en master
+hello
+worlds
+Yay!
+
+Verison en alt
+hello
+world
+Yay!
+
+Al hacer checkout en master y intentar hacer git merge alt nos dará error de conflicto, y se nos generará una tercera versión en el wd de hello con los conflictos en las 3 secciones...
+$ cat hello
+hello
+<<<<<<< HEAD:hello
+worlds
+=======
+world
+>>>>>>> 6ab5ed10d942878015e38e4bab333daff614b46e:hello
+Yay
+
+Podemos hacer un diff de este nuevo fichero a cada uno de los padres por separado...
+$ git diff HEAD
+diff --git a/hello b/hello
+index e63164d..4e4bc4e 100644
+--- a/hello
++++ b/hello
+@@ -1,3 +1,7 @@
+hello
++<<<<<<< HEAD:hello
+worlds
++=======
++world
++>>>>>>> alt:hello
+Yay!
+Obs: en las nuevas versiones de git, podemos hacer esto escribiendo:
+git diff --ours (es sinónimo de HEAD), o sea, pide la diferencia entre nuestra versión, la que teníamos en la rama donde estábamos antes de intentar el merge (la version que había en master) y la que está ahora en el wd ccon los conflictos...
+
+
+Y para la versión de la punta de la rama (alt en este caso) que queremos unificar, se ha creado una nueva referencia, MERGE_HEAD.... para comparar con la versión del hello que hay en alt podemos entonces hacer...
+$ git diff MERGE_HEAD
+diff --git a/hello b/hello
+index 562080a..4e4bc4e 100644
+--- a/hello
++++ b/hello
+@@ -1,3 +1,7 @@
+hello
++<<<<<<< HEAD:hello
++worlds
++=======
+world
++>>>>>>> alt:hello
+Yay!
+Obs: ahora, en las nuevas versiones de git, podemos hacer esto mismo escribiendo:
+git diff --theirs (es sinónimo de MERGE_HEAD), o sea, pide la diferencia entre su versión, la de la rama que queremos incorporar, y la que está ahora en el wd ccon los conflictos...
+
+También podemos hacer
+git diff --base
+que nos compara las versiones actuales del wd con las que existía con el merge_base
+(el merge_base es el ancestro común a los commits que queremos unificar, o sea, el commit
+en el que se creó la rama y empezaron a tomar caminos distintos!!!)
+
+Pero realmente lo más sencillo, es simplemente, utilizar 
+git diff: se ejecuta una versión especial del diff que compara la versión del wd (con los conflictos marcados con las secciones <<< === >>>) y cada una de las versiones padres (la del HEAD y la del MERGE_HEAD)
+En este caso, se comparará el nuevo hello (que tiene en este ejemplo 7 líneas) con los dos "padres" de los que procede.
+
+Obtenemos esta salida:
+$ git diff
+diff --cc hello
+//nos va a dar, para cada fichero conflictivo, por trozos, los conflictos presentados
+//comparando los 3 ficheros: el --ours, el --theirs, y el del wd
+index e63164d,562080a..0000000
+--- a/hello
++++ b/hello
+@@@ -1,3 -1,3 +1,7 @@@
+//Obs: en este conflicto se nombran 3 contextos:
+//en el primer fichero (el --ours, empieza en la línea 1 y tiene 3 de tamaño
+//en el segundo fichero (el --theirs, empieza en la línea 1 y tiene 3 de tamaño)
+//la versión del wd, que empieza en la línea 1 y posee 7 líneas.
+  hello   //no aparece ningún signo, esto significa que esta línea está igual en los 3...
+++<<<<<<< HEAD:hello
+//nos aparecen dos +, el de la columna 1 es la comparación con el ours, y el otro, con el theirs..
+//indican que la línea anterior no está en ninguno de ellos (lógico, pq es una nueva línea añadida para marcar conflictos)
+ +worlds
+//en la primera columna nada (significa que el primer fichero tiene está línea igual))
+//en la segunda columna +, significa que está línea es nueva, no está en la versión de alt.
+++=======   //esta línea es nueva, no estaba en ninguna de las dos versiones, por eso hay ++
++ world
+//un + en la primera col, pq esta línea no está en la primera versión
+//en la segunda columna es blanco pq no ha cambiado
+++>>>>>>> alt:hello  //esta línea no existe en las 2 versiones originales padres
+  Yay!    //las dos columnas no muestran nada, pq esta línea no ha cambiado, existe en los ficheros padres...
+  
+Realmente, esto da igual, nosotros, simplemente para resolver el conflicto, debemos:
+a) editar el fichero conflictivo del wd eligiendo como queremos que quede
+b) hacer el git add de los ficheros conflictivos, una vez los hemos editado ok
+c) hacer el commit
+
+Lo anterior es simplemente para ver como funciona el git diff en los merges con conflictos...
+es como el git diff, pero no entre dos ficheros, sino entre tres!!
+
+Supongamos que elegimos,m despue´s de editar, esta versión:
+$ cat hello
+hello
+worldly ones
+Yay!
+Then the new git diff output is
+$ git diff
+diff --cc hello
+index e63164d,562080a..0000000
+--- a/hello
++++ b/hello
+@@@ -1,3 -1,3 +1,3 @@@
+hello
+- worlds
+-world
+++worldly ones
+Yay
+
+Importante: git diff en los merges tiene una particualridad más:
+Si elegimos una versión, quitando ya los conflictos, que es igual a uno de los padres, ya no nos aprecerá que hay cambios con respecto a otros, pq el git supone que ya hemos resuleto el conflicto...
+O sea, imagina que eidtamos el hello del wd y lo dejamos así...
+$ cat hello
+hello
+world    //lo que estaba en alt!!
+Yay!
+
+Ahora, si hacemos git diff, se compara entre las 3 versiones y obtenemos...
+$ git diff
+diff --cc hello
+index e63164d,562080a..0000000
+--- a/hello
++++ b/hello
+
+No aparece nada!!! 
+¿donde muestra que la línea world es nueva respecto al primero, o que la línea worlds se ha quitado del primero?? Pues no aparece, pq git diff es "listo" y detecta que hemos decidido ya quedarnos con esa versión!! y supone que ya no nos interesa ver el conflicto que existía en esa zona del fichero... sino ver otros conflictos pendientes...
+
+O sea, git diff sólo muestra zonas donde git cree que sigue existiendo el conflicto; y como hemos editado esta zona y nos hemos decantado por una de las versiones, pues nada...
+-----------------------------------------------
+
+git merge rama nos va a unificar la rama en donde estamos ahora si no especificamos el destino...
+
+de rama de desarrollo con la principal... (o con lo que queramos)
+Al hacer merge, lo que pasa es que "unificamos", el contenido de una o más ramas se incorpora, añade, a la rama destino implícita (que será en la que estemos actualmente)
+Esto actualización se puede hacer de varios formas, con un fast forward merge (que avanza simplemente por la nueva rama y coloca ahí el head de la rama origen, si no habíamos divergido en la rama origen con ningún commit desde que se creó la rama nueva), con un 3 way merge (que crea un nuevo commit en la rama principal que incorpora los cambios realizados )...
+
+Observar que, al hacer el merge no se borra nada ni se cambia nada de las ramas que se incorporan... lo único que se actualiza es la rama destino (que suele estar implícita y no se pone pq se supone que es la actual)
+
+
+Cuando hallamos hecho el trabajo que queríamos en la rama de desarrollo podemos ir a la
+principal y hacer el merge...
+1º git checkout main (o la que sea la principal con la que queremos hacer el merge)
+2º git merge desarrollo (o lo que sea la rama de desarrollo)
+Esto hace que la rama main es como si continuara y fuera una con la prolongación que hemos hecho
+De esta forma, tanto la rama main como la rama desarrollo, apuntan al mismo final...
+O sea, git merge rama "unifica (merge)" la rama del checkout (activa) con la de la rama...
+Obviamente, esto tiene sentido si la rama de desarrollo se creó a partir de la main...
+
+En vez de recrear los commits de la rama de desarrollo y añadirla a la main, git reusa
+los commits existentes en la rama, y sencillamente lo único que tiene que hacer es mover
+la punta de main para que sea lo mismo que la punta de la rama... This kind of merge iscalled a fast-forward merge, since Git is “fast-forwarding” through the new commits in the branch.
+
+Observar que si no hemos avanzado en la rama original, al hacer el checkout en la rama original con la nueva, va a ser un fast forward merge... muy sencillito.
+
+Si hemos avanzando tanto en la rama original, como en la derivada, si queremos unificar la derivada en la original pues vamos a necesitar un 3-way merge (utiliza el commit del ancestro común , y los commits de los extremos de ambas ramas), y se va a crear un nuevo commit que tiene dos padres (los últimos commits de ambas ramas).
+
+Observar que puede que en el merge, si hemos cambiado ambas ramas, pueden haber conflictos, porque en ambas ramas se hay cambiado el mismo fichero de forma distintas. En esto caso nos va a decir que hay un conflicto, y va a grabar el conflicto en el fichero conflictivo. Lo que debemos hacer es editarlo y elegir los cambios que queremos dejar. Ya luego haremos el git add y el commit, con lo que acabaremos el merge.
+
+En este momento, después del merge, ambas ramas van a tener el mismo historial...
+Por ello sería redundante mantener ambas.... por ello se suele uno deshacer de la de 
+desarrollo, ya que no aporta nada el tenerlo...
+Para ello hacer:
+git branch -d nombre_rama    (o sea, vamos a borrar la rama pq ya no es necesaria
+utilizamos la opción -d observar que ya todo lo que tenía la rama está integrado en main!!)
+
+Observar que git nos advierte si queremos borrar una rama que no está mergeada (unificada) y no nos dejará. Ya que no es lógico que eliminemos una rama que no ha sido fusionada (aprovechada) en otra... Pero puede ser que realmente sea lo que queramos porque nos demos cuenta de que no nos lleva a nada lo que estamos haciendo...
+
+
+Observar que:
+git status nos indicará en qué rama estemos; podremos cambiar de rama con git checkout rama los ficheros del directorio de trabajo serán los de la rama en cuestión...!!
+o sea, al crear ramas no se crear nuevos directorios ni nada, pero los contenidos del directorio de trabajo irán cambiando según sea la rama en la que nos coloquemos!!!
+
+Para crear la rama en el remoto y sincronizarlo se hace
+git puth --set-upstream origin rama (donde origen es el alias del repo remoto, y rama es el nombre de la rama a crear /sincronizar)
+
+Observar que si queremos cambiar de rama y tenemos cambios pendeintes en la actual nos advierte de que los perderíamos y lo aborta
+
+# MERGE!!!! (FUSIONAR RAMAS!!!)
+Si creamos una rama desde main, por ejemplo g-h-i y luego trabajamos en ella
+para integrarla (merge) haremos:
+1º Colocarnos en la rama principal, por ejemplo git checkout main
+2º git merge g-h-i
+Lo que pasa, es que todos los commits que tiene la rama g-h-i (con los cambios asociados) se añaden a la rama main.
+O sea, en el historial, tras hacer el merge, aparecen los commits de la rama, con sus hash...
+con lo que por tanto, significa que los mismos cambios que hicimos en la rama, se añaden como nuevos commits tb aquí...
+
+Ojo, puede que creemos varias ramas de desarrollo a la vez, y al hacer el merge en alguna nos de conflictos
+(pq se modifican las mismas líneas, etc) en ese caso en la rama principal al hacer el merge
+simplemente habrá que editar los ficheros y elegir los cambios adecuados...
+luego añadir con git add los ficheros y hacer el commit y ya estaría todo resuelto!!!
+
+O sea, si estamos en una rama...
+git merge otra_rama lo que nos hace es intentar fusionar la rama actual con la que le hemos dicho...
+Hay casos en que esto es muy fácil (por ejemplo en un fast-forward merge) y otros no tanto,k .... y puede que tengamos
+que resolver conflictos...
+observar que si no le damos el mensaje se nos abrirá el editor... con lo que es mejor escribir
+git merge otra_rama -m "mensaje para el fusionado"
+
+
+# Modificar el historial de commits... métodos y usos...
+git commit --amend
+git revert
+git cherry-pick
+rebasing commits
+git reset
+
+Cuidado: no podemos modificar el historial si ya se ha subido a algún repo principal desde el que alguien puede sincronizar... Ideal para hacer todo esto en local (para corregir pequeños fallos, ordenar de una manera más lógica, unificar, etc)
+
+#Modificar el historial de commits con git commmig --amend  (changing the top commit!!)
+Es uno de los métodos más sencillos.. Se usa cuando el último commit tiene algunos pequeños fallos (puede ser simplemente el mensaje, o cambiar la autoría, o nos faltó añadir algún fichero, o queremos dejar alguno fuera pq todavía no está maduro... etc......)
+Una opción podría ser añadir un nuevo commit con las correcciones y ya está...
+Pero git commit --amend sirve para que, el nuevo commit que hagamos sustituya totalmente al anterior (el anterior desaparece por completo)
+Es como enmendar el último commit y tener otra oportunidad para hacerlo de nuevo, con los cambios necesarios...
+Lo que conseguimos es que no hayan dos commits (el original y el de la corrección) sino uno solo, ya ok.
+
+#Modificar el historial de commits con git revert
+Crea un nuevo commit, que se añade al historial, que anula los cambios (es el contrario) de otro especificado.
+O sea, realmente no altera el historial de commits existente, sino que crea uno nuevo (que hace lo contrario que el especificado)
+Supongamos un historial:
+A - B - C - D - E - F - G
+Imaginemos que hemos introducido cambios erróneos (o de los que nos arrepentimos) en el commit D.
+Cómo hacemos para enmedarlos...
+Ahora estamos en el estado G. Podríamos editar los ficheros con los fallos y corregirlos y hacer un nuevo commit. Sería válido,
+Pero es más sencillo simplemente decir: git revert D; esto nos crea un nuevo commit, D', que anula, es contgrario, a los cambios de D, con lo que ya estaría todo correcto de nuevo.
+Esto lo haríamos, suponiendo que estamos en la rama master, con git revert master~3 (o nombrando explicitamente el commit D con su hash)
+Resultado final:  A - B - C - D - E - F - G - D' donde los cambios erróneos introducidos en D ya no están!!
+
+#Modificar el historial de commits con git cherry-pick
+git cherry-pick commit : lo que hace es, aplica el cambio efectuado en el commit a la rama actual. O sea, se crea un nuevo commit en la rama actual que hace exactamente lo mismo que el indicado.
+O sea, realmente no altera el historial de commits existente, sino que crea uno nuevo (que hace lo mismo que el especificado)
+Como en otras operaciones que introducen cambios basándose en un diff (los merges, los rebases, ...) puede haber conflictos que debemos resolver.
+Normalmente se usa para aplicar cambios existentes de alguna rama del repositorio a otra distinta
+Ejemplo:
+
+A - B - C - D - E - F (bugfix) - G - H	dev
+	 \
+	  V - W - X - Y - Z			rel_2.3
+	  
+Imagina que hemos arreglado un bug en la rama de desarrollo, en el commit F, y queremos llevar esa solución a la rama de la release 2.3... Simplmente haremos:
+git checkout rel_2.3
+git cherry-pick dev~2
+El resultado sería, volver a aplicar un commit equivalente a F, pero en la rama rel_2.3
+
+A - B - C - D - E - F (bugfix) - G - H	dev
+	 \
+	  V - W - X - Y - Z	- F' (bugfix) 		rel_2.3
+
+Otra aplicación es reconstruir una serie de commits seleccionándolos de una rama y reaplicándolos en otra...
+Por ejemplo, imagina que tenemos una rama de desarrollo con algunos commits interesante que queremos reaplicar en nuestra rama principal, pero en un orden concreto...
+
+A - B - C - D 	master
+	 \
+	  V - W - X - Y - Z		my_dev
+
+Imagina que queremos aplicar estos commits en master, en este orden: Y, W, X, Z... 
+Haríamos:
+
+git checkout master
+git cherry-pick my_dev^
+git cherry-pick my_dev~3
+git cherry-pick my_dev~2
+git cherry-pick my_dev
+
+Tras hacer esto, el historial de commits quedará...
+
+A - B - C - D - Y' - W' - X' - Z' 	master
+	 \
+	  V - W - X - Y - Z		my_dev
+	 
+Observar que, en las versiones actuales de git, se permite reaplicar varios commits seguidos con el formato
+commit_inicial..commit_final
+
+Por ejemplo, en el caso anterior (en el estado incial) 
+git checkout master
+git cherry-pick X..Z reaplica los commits X' Y' Z' a la rama master...
+
+#Modificar el historial de commits con rebasing commits
+se utilizar para cambiar donde están ubicados una serie de commits... o sea, trasladamos una serie de commits a otra rama....
+IMPORTANTE:
+Por defecto, se recolocan los commits de la rama actual, que no están actualmente ya en la otra... (es lo lógico). O sea, se empieza mirando por el extremo de la rama actual, se recorre al revés hasta que se encuentra dónde converge con la rama destino (el commit merge_base); pues se trasladaría todo ese trozo (los commits desde que se divergió, o sea, los commits a partir del merge_base (sin incluirlo!!)
+
+Aplicación clásica es mantener una serie de commits que estamos desarrollando, actualizando otra rama principal.
+
+Veamos un ejemplo:
+Tenemos una rama principal (master) y una rama topic, en la que hemos desarrollado un trabajo interesante que queremos incorporar a master... Obviamente, se puede hacer esto con merge, pero veamos el rebase...
+
+A - B - C - D - E	master
+	 \
+	  W - X - Y - Z		topic
+	  
+Para hacer el "rebase" (== reubicación, recolocación) de topic... haremos:
+
+git checkout topic (1º nos colocamos en la rama a reubicar)
+git rebase master (que significa: reubícame en master)
+O simplemente, git rebase master topic (sin necesidad de hacer primero el checkout)
+
+El resultado es el siguiente:
+
+A - B - C - D - E	master
+				 \
+				  W' - X' - Y' - Z'	topic
+				  
+Ahora, SI QUISIÉRAMOS, podríamos simplificar la estructura:
+
+1º hacemos un fast forward merge...
+git checkout master
+git merge topic
+
+A - B - C - D - E	
+				 \
+				  W' - X' - Y' - Z'	topic y master
+
+2º podríamos borrar ya topic, pq todo el trabajo está aprovechado ya...
+git branch -d topic
+
+A - B - C - D - E	
+				 \
+				  W' - X' - Y' - Z'	master
+
+Esto se usa mucho en el contexto de un repo que hemos clonado, se suele usar hacer un rebase de nuestras ramas de desarrollo, e incorporarlas a la principal (que hemos actualizado) 
+Mensaje del mantenedor del repo típico: Please rebase your patch to the tip-of-master.
+
+También se puede usar para "trasplantar" una línea de desarrollo de una rama a otra totalmente distinta...
+
+A - B - C - D - E			master
+	 \
+	  W - X - Y - Z		maint
+			   \
+				P - Q 	feature
+				
+Imagina que queremos trasladar la nueva utilidad, P, Q (de la rama feature, que está actualmente basada en la rama maint) y queremos llevarla a otra rama distinta, a master...
+
+Recordar que el rebase se lleva todos los commits de la rama actual que no están en la de destino;
+O sea, si hacemos:
+git checkout feature
+git rebase master
+trasladaría... W, X, Y, P, Q a master, que no es lo que queremos!!!
+Para trasladar sólo P y Q hacemos:
+
+$ git rebase --onto master maint^ feature      
+la sintaxis creo que es dónde hay que llevar (en este caso master)
+y el rango de commits que hay que llevar...
+
+(recordar que el rango se recorre desde el commit derecho hasta el principio, y se eliminan todos los del recorrido del commit izquierdo hasta el principio; leer pg 78 del libro version control with git 2nd ed.
+QUeda pendiente hacer explicación sobre los rangos!!
+
+O sea, le decimos, recoloca en master, desde maint^ (o sea, Y) hasta feature (Q)
+Recordar que cuando se dan rangos de commits, el primero (Y) no se incluye; por tanto, estamos 
+diciendo que recoloque P y Q
+
+Resultado:
+
+				  P' - Q' 	feature
+				 /
+A - B - C - D - E			master
+	 \
+	  W - X - Y - Z		maint
+			   
+			   
+Recordemos que al recolocar los commits pueden suceder conflictos que hay que resolver... en este caso se empieza recolocando P' y si hubiera un conflicto se para hasta que esté resuelto...
+Cuando estuviera resuelto, para que se sigue el rebase habría que dar la orden...
+git rebase --continue que haría que se continuara con Q',
+Si, mientras estamos resolviendo un conflicto para llevar un commit, pensamos que este commit no es necesario, podemos decirle que pase de resolver este conflicto, que pase de llevar este commit y siga haciendo rebase con el siguiente; para ello utilizamos git rebase --skip
+
+(Aunque esto puede ser bastante problemático, pq a lo mejor el siguiente commit utilzia cosas del que hemos saltado; no es aconsejable, a no ser que lo tengamos claro y sepamos lo que estamos haciendo!!)
+
+Por último, podemos hacer, si las cosas van realmente mal y estamos perdidos, git rebase --abort
+
+Se cancelaría todo...
+
+Resumen: en el rebase se van colocando uno a uno los commits y pueden surgir conflictos... utilizaremos en estos casos, cuando se pare el proceso para que los arreglemos, las siguientes opciones:
+
+git rebase --continue (ya hemos resuelto el conflicto y queremos que se siga el rebase)
+git rebase --skip (creemos que este commit no es necesario, con lo que no arreglamos el conflicto pero le decimos que siga sin integrar este commit)
+git rebase --abort (las cosas están torcidas, pasamos del rebase)
+
+
+# git rebase -i(interactivo)
+Es una opción muy potente y sencilla de usar. Sirve para reordenar, editar, borrar, combinar múltiples commits en uno, o dividir uno en varios, ... Esto lo conseguimos con la opción -i ( o --interactive).
+Así, nos permite modificar una serie de commits que forman una rama y recolocarlos como queramos en la misma rama o en otra...
+
+Uno uso clásico, que veremos en ejemplo (pg 170 y sig. de version control with git 2nd ed) es modificar una misma rama en sus sitio, simplemente haciendo cosas con los commits (cambiando orden, combinando, etc)
+En este caso, supongamos que tenemos una rama con simplemente 4 commits... que hemos utilizado para componer un haiku:
+
+[master] Use American spellings
+[master^] Finish my colour haiku
+[master~2] Use color instead of colour
+[master~3] Start my haiku
+
+y querríamos alterar los commits para que fueran.
+[master] Use American spellings  (este commit combinaría los dos con ls correcciones)
+[master^] Finish my colour haiku
+[master~2] Start my haiku
+
+¿Cómo se hace? sencillo. Lo haremos de dos pasos, 1º reordenaremos los commits y luego combinaremos los dos con las correcciones... Esto se puede hacer en un solo paso pero lo dividiremos en dos para explicar mejor...
+1º simplemente decir a rebase a partir de qué commit queremos cambiar las cosas...
+En este caso
+git rebase -i master~3   (o sea, el master~3 no se va a alterar)
+
+Se nos abre el editor, con las intrucciones para el rebase!! Es simplemente seguir las instrucciones y luego cerrar el editor!!
+
+pick 3d0f83b Use color instead of colour
+pick 799dba3 Finish my colour haiku
+pick b61b041 Use American spellings
+# Rebase a75f74e..b61b041 onto a75f74e
+#
+# Commands:
+# pick = use commit
+# edit = use commit, but stop for amending
+# squash = use commit, but meld into previous commit
+#
+# If you remove a line here THAT COMMIT WILL BE LOST.
+# However, if you remove everything, the rebase will be aborted.
+#
+Vemos que las primeras líneas son los commits en el orden actual (empezando por el más antiguo)
+Tenemos la opción, simplemente, de escoger el orden que queramos!! y ya estaría
+También podemos hacer el squash (para combinar un commit con el anterior)
+También podemos simplemente pasar de un commit (borramos la línea)
+La opción de edit, no la entiendo bien...
+
+En nuestro caso, como lo haremos de dos pasos para explicar mejor, simplemente 1º cambiamos el orden para poner que primero queremos terminar el haiku... con lo que el fichero quedaría...
+pick 799dba3 Finish my colour haiku
+pick 3d0f83b Use color instead of colour
+pick b61b041 Use American spellings
+
+Ahora ya nos quedaría.,..
+$ git show-branch --more=4
+[master] Use American spellings
+[master^] Use color instead of colour
+[master~2] Finish my colour haiku
+[master~3] Start my haiku
+
+Nos queda un rebase final para combinar las dos correciones ...
+
+git rebase -i master~3   (aunque creo que no hace falta, podíamos hacer master~2)
+
+El editor nos muestra
+pick d83f7ed Finish my colour haiku
+pick 1f7342b Use color instead of colour
+pick 1915dae Use American spelling
+
+Debemos simplemente poner
+pick d83f7ed Finish my colour haiku
+pick 1f7342b Use color instead of colour
+squash 1915dae Use American spelling   //esto hace que no se cree un commit nuevo, sino que los cambios se combinen con el anterior, para tener un solo commit
+
+Obs. se pueden tener varios squash consecutivos!!!
+
+En este caso, también se nos abre el editor para poder escribir el mensaje asociado al commit combinado resultante!!! Nos salen los de los commits involucrados en la combinación, y podemos poner lo que queramos...
+
+Resultado final, lo que queríamos:
+$ git show-branch --more=4
+[master] Use American spellings
+[master^] Finish my colour haiku
+[master~2] Start my haiku
+
+Observación: en la versión actual de --interactive hay muchísimas más opciones que las comentadas!!
+Simplemente, al usarlo, en el editor nos salen las instrucciones y podemos ver todas las opciones!!
+
+# MERGE vs REBASE
+Rebasing a sequence of commits to the tip of a branch is similar to merging the two branches; in either case, the new head of that branch will have the combined effect of both branches represented.
+
+Pero observar que al recolocar los commits se generan una secuencia nueva de commits, tienen distinto SHA1, incluso representan diferentes diffs, aunque al final el resultado es el mismo!!
+
+Consideremos una situación...
+
+A - B - C - D 			master
+	 \
+	  X - Y - Z				dev
+		   \
+			P - Q			dev2
+			
+Imaginemos que queremos llevar tod la estructura, dev y dev2, y recolocarlo en master..
+
+1º git rebase master dev  no bastaría, ya que nos daría...
+
+			  X' - Y' - Z'			dev
+			 /
+A - B - C - D 			master
+	 \
+	  X - Y 						
+		   \
+			P - Q						dev2
+			
+Visto de otra forma equivalente...
+			 
+			  X' - Y' - Z'			dev
+			 /
+A - B - C - D 			master
+	 \
+	  X - Y - P - Q	 		dev2
+									
+O sea, sólo se han trasplantado la rama dev, sin la subrama, y se han dejado los commits necesarios para alcanzar la subrama dev2!!
+
+Si quisiéramos mover las dos ramas, lo que debíamos hacer es, a continuación de lo anterior...
+2º $ git rebase dev^ dev2   (o sea, llevar a Y (que es dev^) la rama dev2)
+Dudas: qué pasa con X e Y'??? por lo visto no se reaplican...
+
+O sea, tendríamos que hacerlo de dos pasos!! y teniendo cuidado para elegir bien el punto adecuado al final (dev^).
+
+-----------------
+Otra situación complicada es cuando queremos hacer rebase de una rama que tiene merges incorporados!!!
+
+			P - M - N dev
+		   /   /
+	  X - Y - Z
+	 /
+A - B - C - D	master
+
+Si hacemos git rebase master dev (recolocar en master la rama dev) no nos da el resultado que queríamos...
+¿Por qué? porque rebase calcula todos los commits que hay que reubicar utilizando el rango master..dev
+(que es lo correcto, todos hasta que convergen en B, sin incluir a B, son los que debe reubicar)
+Pero lo que pasa es que luego, git hacer un "topological sort" de estos commits, y los coloca de forma liineal!!!
+O sea, cuando aplicamos rebase para recolocar un rama que posee merges, rebase la linealiza...
+
+En este caso nos quedaría..
+
+A - B - C - D (master) - X' - Y' - Z' - P' - N' (dev)  (observar que M no está, porque es el commit merge que no tienen ningún cambio que añadir, ya que al incluir P y Z ya está todo!!!)
+
+Si este es el resultado que queremos, fantástico, ya estaría... es una estructura lineal mucho más sencilla
+
+SI por lo que fuera quisiéramos mantener la estructura con los merges.. tendríamos que usar la opción...
+$ git rebase --preserve-merges master dev
+
+Resumen:
+Rebase transforma la estrucutra de ramas a lineal.
+Cuidado con todo esto, si los cambios se han subido a otro repo o usuario previo a nuestro rebase, puede haber problemas!!!
+
+# Modificar el historial de commits con git reset
+git reset lo que hace es resetear el repositorio y el wd al estado de un commit anterior.
+
+Ejemplo:
+Estado inicial del repo: A - B - C - D - E - F  master
+git reset C nos quedaría la rama...
+Esto final del repo: A - B - C master
+la punta de la rama ahora está en C!
+Los commits D, E y F han "desparecido".
+
+O sea, se modifica la punta (HEAD) de la rama y se actualiza al commit que le digamos. Además, si especificamos la opción --hard, también se actualiza el wd a la del commit indicado.
+
+Como poco nos va a cambiar el HEAD de la rama donde estemos, y pasará a apuntar al commit que le digamos, y, como consecuencia, ¡¡perderemos todos los commits posteriores!! Por tanto, sirve para borrar commits!! CUIDADO!!
+
+En concreto... nos puede actualizar el HEAD, el index, y el wd a los de un estado/commit anterior, según la opción elegida:
+
+git reset --soft: actualiza el HEAD al commit indicado.
+
+git reset --mixed: actualiza el HEAD y el index. ES LA OPCIÓN POR DEFECTO!!!
+Nos deja el index como estaba justo al hacer el commit... Por tanto, si ahora hiciéramos git status nos aparecerían todos los cambios pendiente que tenemos... 
+
+git reset --hard: actualiza el HEAD, index, y WD (TODO).
+
+Actualizar el HEAD significa que hemos movido la rama actual (la punta) y señala ahora al commit que hemos elegido. Esto significa que perderemos los commits posteriores que hubieran (a no ser que estuvieran en otra rama!!!) Cuidado!!!!!
+Cambiar el index significa que el index se actualiza al árbol del commit referenciado, reflejando el estado del repo en ese momento.
+Cambiar el WD significa que se nos actualiza el WD al estado del repo en aquel commit.
+
+Es peligroso pq podemos perder commits, podemos perder info del wd, etc.
+
+Observar, que si no damos el commit, se refiere al HEAD...
+
+ejemplos de aplicaciones:
+git reset
+Esto es lo mismo que git reset HEAD ó git reset --mixed HEAD.
+¿qué hace esto?
+el HEAD no lo cambia, no nos cambia la punta de la rama, pq al omitir el commit pues deja el actual HEAD;
+lo único que hace es nos pone el index como estaba en el último commit!! 
+En resumen, esto lo único que nos hace es que nos borra todas las cosas que habíamos introducido en el stage!!!
+O sea, básicamente, git reset simplemente nos resetea el stage.
+Observar, que se puede hacer esto indicando un fichero, para quitarlo del stage dejando todos los demás cambios añadidos al stage...
+O sea, en este caso lo que hace es sacar del stage los cambios que hemos metido... realmente no saca nada, sino que como recupera el index del commit, todos los cambios que habíamos añadido pues ya no estarán...
+
+Por ejemnplo, cambiamos (o creamos un nuevo fichero) main.c
+Lo añadimos al stage con git add main.c
+
+Si luego nos arrepentimos podemos:
+git reset HEAD  o, git reset (desharía todo lo añadido al stage)
+o git reset HEAD main.c (si sólo queremos quitar el fichero main.c del stage)
+o git restore --staged main.c
+
+git reset --hard (es lo mismo que git reset --hard HEAD)
+Pues lo que nos hace es nos vuelve al wd del HEAD
+cuidado: perderemos todos los cambios que hayamos hecho desde el último commit) y hace que el index esté igualito, actualizado a este último estado!!
+O sea, git reset --hard estamos volviendo a la versión previa.
+
+Por supuesto git reset --hard commit_anterior nos vuelve a l versión del commit_anterior, pero, a diferencia del checkout, nos actualizad el HEAD, con lo que significa que la rama ahora termina donde le digamos, hemos perdido todos los commits posteriores!!!!!
+
+Importante: git reset guarda el HEAD antiguo y lo almacena en la referencia ORIG_HEAD.
+
+Otro ejemplo: hemos hecho varios commits... pero el último no nos gusta... aunque queremos conservar los cambios en lso ficheros que hemos hecho... (o sea, queremos conservar el wd actual, tras el úlitmo commit)
+Pues usaremos
+git reset --mixed HEAD^1
+
+O sea, nos colocamos en el penúltimo commit (o sea, borramos el último)
+PERO MANTENIENDO EL WD actual!!!
+Hemos borrado el commit, pero no los ficheros con sus cambios tal como los tenemos actualmente
+Esto nos sirve para rehacer el commit añadiendo nuevas cosas, etc
+La aplciación sería similar a la de un commit --amend
+
+Si simplmente desseamos también mantener el stage como está, pero cambio del mensaje, etc..
+git reset --soft HEAD^1
+O sea, nos deja todo igual, excepto que hemos desplzado la punta de la rama al commit anterior...
+Ahora podemos hacer un commit simplemente si queremos para guardar todo...
+Similar a un commit --amend donde sólo nos interesa cambiar el mensaje del commit, por ejemplo!!
+
+Por supuesto, todo esto es peligroso!!! mucho mejor para casos sencillos, utilizar el commit --amend !!!!!
+
+Pero, si de verdad los commits son erróneos, podemos utilizarlo...
+Por ejejmmplo, queremos deshacernos de los 3 últimos commits...
+git reset --hard HEAD~3  (coloca la punta de la rama en el 4º, con lo que borramos los 3 más recientes)
+si la rama en la que estamos es master, tb podemos hacer git reset --hard  master~3
+
+Importante: cuando hacemos git reset no estamos cambiando de rama... sólo cambiamos la punta de la rama para que apunte a donde digamos!!
+Puede ser confuso hacer git reset para apuntar a un commit de otra rama!!! Mejor no liar las cosas
+(157 y siguientes de version control with git!!)
+
+# subir una rama al repo remoto....
+si hacemos el clásico git push, no se nos van a subir las ramas, para subir las ramas hay que añadir la opción -u (upstream)
+ejemplo: git push -u origin (el alias del repo remoto) experimental (la rama a subir)
+
+# descarga de ramas remotas
+git fetch		Download objects and refs from another repository
+Fetch branches and/or tags (collectively, "refs") from one or more other repositories, along with the objects necessary to complete their histories. Remote-tracking branches are updated (see the description of <refspec> below for ways to control this behavior).
+
+# borrado de ramas
+git branch -d rama_a_borrar
+puede que nos de problemas pq no esté actualizado, o haya que fusionar, o queden cosas pendientes....
+si queremos que pese a todo lo borre...
+git branch -D rama_a_forzar_el_borrado
+
+# borrado de ramas remotas
+git push origin --delete rama_a_borrar_remota
+
+# como hacer push de una rama para que también se cree en el repo remoto
+Normalmente esto no hace falta , ya que lo normal es en local hacer los cambios
+y merge al main otra vez, y ya haríamos luego el push del main... pero puede que necesitemos
+hacerlo pq a lo mejor en la rama hay trabajando muchas personas...
+En este caso creo que sería, estando en la rama
+git push --set-upstream origin "nombre_rama_remota_a_crear"
+
+En el libro dice que, desde la rama debemos hacer:
+git push origin rama_a_crear  (lo mejor es ponerle el mismo nombre, imagino)
+origin, o el alias que sea... recordar q para ver los repositorios remotos basta con hacer git remote
+
+# RAMAS REMOTAS!!
+Son referencias(refs) son referencias con datos de nuestros repos remotos (branches, tags, etc)
+Para ver todas las ramas, incluidas remotas, git branch -a o git branch --all
+También, para ver solo las remotas, git branch -r
+
+EN este caso, aparte de las ramas, tb nos muestra donde está el HEAD remoto...
+La información de estas ramas, está guardada en .git/refs/remotes/alias_remoto
+Es lo mismo que con las ramas, son simplemente ficheros, con el nombre de la rama cuyo contenido es simplemente el código ssh de los commits respectivos en los q está situada la rama remotas
+IMPORTANTE: está infromación sólo se actualiza si hacemos alguna opración tipo fecth, pull o push... si no no se recupera!!!
+Por supuesto, entonces los commits a los que hace referencia estas ramas remotas los tendremos almacenados tb nosotros!!
+Para referirnos nosotros a una rama remota lo haremos con remoto/rama; ejemplo origin/test
+Cuando hacemos operaciones como git clone, fetch, pull, push y recuperamos información sobre los remotos, se crearán/borrarán/actualizarán las ramas remotas con el ssh adecuado.
+Por ejemplo, cuando hacemos git clone repo.. se nos creará tanto la rama local main como la rama remota origin/main, ambas, apuntando al último commit del repo origin en este momento...
+Luego, ya se irá cambiando la rama main local, pero el contenido de origin/main no se actualizará sino con un push o un pull o ... O sea, igual otra persona está actualizando el repo original, pero nosotros no tendremos la información actualizada del repo principal hasta que hagamos un nuevo push o pull o algo...
+
+Ejemplo; clonamos un repo y hacemos trabajo localmente... hemos movido la rama main nuestra.
+Alguien hace trabajo y actualiza el remoto origin: se ha movido la rama origin/main...
+Pero nosotros no lo sabemos todavía!!!
+Si hacemos git fetch origin lo que pasa es que se actualiza la información, se descargan los commits nuevos del repo origin y se actualiza la rama origin/main para apuntar al último commit del remoto (que ya tenemos descargado tb, claro)
+En este momento ya está ok la info de la rama remota origin/main.
+
+Por supuesto, estos cambios no están incorporados a nuestra rama local, deberemos hacer un merge si queremos...
+
+Observar que con git add nuevo_repo_remoto no se actualiza la información; primero debemos añadir el repo pero al hacerlo git no comprueba nada... es cuando luego hacemos el git fetch cuando se recupera la información!!!
+Al hacer el git fetch se descargan los commits (que no tuviéramos) y se actualiza la info respecto a las ramas remotas del server...
+
+Observar que podemos hacer checkoout a una rama remota, pero no tiene sentido sino para ver, como estaríamos en estado  detached HEAD.
+
+Importante: observa que al hacer git fetch se me desarga toda la infor del remoto y , si hay alguna nueva rama, se descarga la info de esta rama remota, pero TAMBIÉN SE CREA UN NUEVA RAMA LOCAL, aunque sin los cambios!!
+O sea, nos crea la rama local tb, pero, si en el remoto hemos hecho cambios, estos no están todavía en esta nueva rama, tendremos que ser nosotros quien, lógicamnete, autorizemos el merge!!
+
+Creo que antes el fetch no creaba la rama localmente, creo que quizás sea configurable???
+Porque lo lógico sería que no supusiera que quiero crearla!! 
+Además, en el libro PRO Git comenta que al hacer el fetch no se me crea la rama local:
+
+"It’s important to note that when you do a fetch that brings down new remote-tracking branches,
+you don’t automatically have local, editable copies of them. In other words, in this case, you don’t
+have a new serverfix branch; you have only an origin/serverfix pointer that you can’t modify"
+
+Si, después de hacer fetch, queremos traer la rama remota (en el ejemplo serverfix) al local, sería...
+  (si no se hubiera creado localmente con el fetch, como pasaba antes creo)
+$ git checkout -b serverfix origin/serverfix 
+
+Si ya se hubiera creado la rama localmente
+$ git checkout serverfix
+$ git merge origin/serverfix   
+
+Si estamos en una rama local y queremos empujarla al remoto, no vale simplemente con git push (ya que no conoce git a donde queremos empujarla inicialmente!!)
+Debemos hacer git push repo_remoto rama_local_a_empujar
+Esto ya nos crearía la rama en el remoto si no existiera, o, si existiera, la actualizaría...
+
+También podríamos hacer: git push repo_remoto  rama_a_empujar:nombre_que_queremos_darle_en_remoto
+Esto sirvfe por si queremos crearla en el remoto, pero con un nuevo nombre...
+
+# Seguimiento de ramas remotas!!
+Tracking branches son ramas locales que están asociados a ramas remotas, de forma que cuando hacemos una operación pull o push desde estas ramas ya sabemos a donde estamos dirigiéndonos y no tenemos que especificar el repo remoto ni la rama remotas para la operación.
+
+Por ejemplo, al clonar un repo, automáticamente se nos crea una relación que hace que nuestra rama local principal(main por ejemplo) esté siguiendo a la main del repo del que clonamos (origin por ejemplo)
+Al hacer desde esta rama git push o git pull no hace falta especificar nada más...
+
+También esta asociación se crea cuando creamos una nueva rama que se copia de una remota...
+git branch -b nueva_rama_local remote/branch
+
+hasta hay un comando que hace esto: crea una nueva rama desde el remoto y la trackea, sería exactamente lo mismo que lo anterior, pero además nos chequea en esta nueva rama
+git checkout --track origin/main (por ejemplo)
+Hace: crea una nueva rama que apunta al commit adecuado/nos chequea en esta nueva rama/ sigue a esa rama
+
+Es algo tan usual, que incluso existe una abreviatura para la abreviatura anterior, simplemente...
+git checkout rama: si intentamos hacer un checkout a uan rama que no existe localmente, y justo existe un solo repo que la tiene, pues nos hace todo lo anterior!!!  (crear y chequear y seguir!!)
+
+Si queremos que la nueva rama se llame distinta podemos añadir un nombre para la rama... Ejemplo
+git checkout -b sf origin/serverfix
+
+
+¿Cómo hacemos esto para una rama que ya está creada para que siga a otra remota o siga a una distinta a la actual?
+con la opción -u o --set-upstream del comando branch
+git branch -u origin/serverfix   
+(creo que primero tenemos que estar chequeados en esa rama!!)
+
+git branch --track MOODLE_311_STABLE origin/MOODLE_311_STABLE 
+también serviría...
+
+Además, si estamos haciendo tracking, @{u} o @{upstream} sirven de abreviatura para referirnos a esa rama remota a la que estamos siguiendo...
+
+Por ejemplo, si estamos en nuestro master, que está trackeando una remota...
+después de actualizar con un fetch y comprobar que está todo ok en la rama remota/master...
+para mergear, en vez de hacer, por ejemplo: git merge origin/master podríamos hacer git merge @{u}
+
+interesante: git branch -vv nos muestra las ramas que están configuradas para trackear...
+Observar que la info que se muestra, en cuanto a si vamos por delante o detrás de los remotos, no está actualizada, sino que se actualiza sólo cuando hacemos un fetch, ...
+Es como la opción -v (--verbose) pero además añade al lado de la rama, entre corchetes, la info de la rama remota a la que sigue, si la hubiera...
+
+Para tener esta info actualizada, podríamos hacer...
+git fetch --all (para que actualiza la info de todos los repos remotos...)
+Ahora git branch --vv nos da info OK!!
+
+
+# git fetch
+Descarga toda la info del repo remoto que no tenemos, pero no modifica para nada nuestro working directory, porque no integra automáticamente nada a nuestras ramas locales... actualiza solo la info referente a nuestras ramas remotas, descargando sus commits nuevos, etc..
+
+git fetch alias_del_repo   
+Esto lo que hace es ir al remoto y descargar toda la info que no tenemos todavía...
+Después de esto, tendremos en nuestro repo referencias a todas las ramas del remoto, que podremos unificar o inspeccionar cuando queramos....
+Por ejemplo, si tenemos un remoto que se llamara pb 
+git fetch pb haría que pudiéramos acceder a pb/master ... etc.. (o sea, no se integran en nuestro main o master, esto lo tendríamos que hacer nosotros luego si acaso...)
+
+# GIT FETCH (de Atlassian)
+The git fetch command downloads commits, files, and refs from a remote repository into your local repo.
+Fetching is what you do when you want to see what everybody else has been working on.
+It doesn’t force you to actually merge the changes into your repository.
+Git isolates fetched content from existing local content; it has absolutely no effect on your local development work. Fetched content has to be explicitly checked out using the git checkout command. This makes fetching a safe way to review commits before integrating them with your local repository.
+
+When downloading content from a remote repo, git pull and git fetch commands are available to accomplish the task. You can consider git fetch the 'safe' version of the two commands. It will download the remote content but not update your local repo's working state, leaving your current work intact.
+
+git pull is the more aggressive alternative; it will download the remote content for the active local branch and immediately execute git merge to create a merge commit for the new remote content. If you have pending changes in progress this will cause conflicts and kick-off the merge conflict resolution flow.
+
+How git fetch works with remote branches
+To better understand how git fetch works let us discuss how Git organizes and stores commits. Behind the scenes, in the repository's ./.git/objects directory, Git stores all commits, local and remote. Git keeps remote and local branch commits distinctly separate through the use of branch refs. The refs for local branches are stored in the ./.git/refs/heads/. Executing the git branch command will output a list of the local branch refs. The following is an example of git branch output with some demo branch names.
+
+git branch
+main
+feature1
+debug2
+Examining the contents of the /.git/refs/heads/ directory would reveal similar output.
+
+ls ./.git/refs/heads/
+main
+feature1
+debug2
+
+Remote branches are just like local branches, except they map to commits from somebody else’s repository. Remote branches are prefixed by the remote they belong to so that you don’t mix them up with local branches. Like local branches, Git also has refs for remote branches. Remote branch refs live in the ./.git/refs/remotes/ directory. The next example code snippet shows the branches you might see after fetching a remote repo conveniently named remote-repo:
+
+git branch -r
+# origin/main
+# origin/feature1
+# origin/debug2
+# remote-repo/main
+# remote-repo/other-feature
+
+This output displays the local branches we had previously examined but now displays them prefixed with origin/. Additionally, we now see the remote branches prefixed with remote-repo. You can check out a remote branch just like a local one, but this puts you in a detached HEAD state (just like checking out an old commit). You can think of them as read-only branches. To view your remote branches, simply pass the -r flag to the git branch command.
+
+You can inspect remote branches with the usual git checkout and git log commands. If you approve the changes a remote branch contains, you can merge it into a local branch with a normal git merge.
+So, synchronizing your local repository with a remote repository is actually a two-step process: fetch, then merge. The git pull command is a convenient shortcut for this process.
+
+Git fetch commands and options
+git fetch <remote>
+Fetch all of the branches from the repository. This also downloads all of the required commits and files from the other repository.
+
+git fetch <remote> <branch>
+Same as the above command, but only fetch the specified branch.
+
+git fetch --all
+A power move which fetches all registered remotes and their branches:
+
+git fetch --dry-run
+The --dry-run option will perform a demo run of the command. It will output examples of actions it will take during the fetch but not apply them.
+
+Git fetch examples
+git fetch a remote branch
+The following example will demonstrate how to fetch a remote branch and update your local working state to the remote contents. In this example, let us assume there is a central repo origin from which the local repository has been cloned from using the git clone command. Let us also assume an additional remote repository named coworkers_repo that contains a feature_branch which we will configure and fetch. With these assumptions set let us continue the example.
+
+Firstly we will need to configure the remote repo using the git remote command.
+
+git remote add coworkers_repo git@bitbucket.org:coworker/coworkers_repo.git
+Here we have created a reference to the coworker's repo using the repo URL. We will now pass that remote name to git fetch to download the contents.
+
+git fetch coworkers_repo coworkers/feature_branch
+fetching coworkers/feature_branch
+We now locally have the contents of coworkers/feature_branch we will need the integrate this into our local working copy. We begin this process by using the git checkout command to checkout the newly downloaded remote branch.
+
+git checkout coworkers/feature_branch
+Note: checking out coworkers/feature_branch'.
+
+You are in 'detached HEAD' state. You can look around, make experimental
+changes and commit them, and you can discard any commits you make in this
+state without impacting any branches by performing another checkout.
+
+If you want to create a new branch to retain commits you create, you may
+do so (now or later) by using -b with the checkout command again. Example:
+
+git checkout -b <new-branch-name>
+The output from this checkout operation indicates that we are in a detached HEAD state. This is expected and means that our HEAD ref is pointing to a ref that is not in sequence with our local history. Being that HEAD is pointed at the coworkers/feature_branch ref, we can create a new local branch from that ref. The 'detached HEAD' output shows us how to do this using the git checkout command:
+
+git checkout -b local_feature_branch
+Here we have created a new local branch named local_feature_branch. This puts updates HEAD to point at the latest remote content and we can continue development on it from this point.
+
+Synchronize origin with git fetch
+The following example walks through the typical workflow for synchronizing your local repository with the central repository's main branch.
+
+git fetch origin
+This will display the branches that were downloaded:
+
+a1e8fb5..45e66a4 main -> origin/main
+a1e8fb5..9e8ab1c develop -> origin/develop
+* [new branch] some-feature -> origin/some-feature
+The commits from these new remote branches are shown as squares instead of circles in the diagram below. As you can see, git fetch gives you access to the entire branch structure of another repository.
+
+Origin and main branches
+To see what commits have been added to the upstream main, you can run a git log using origin/main as a filter:  
+
+git log --oneline main..origin/main
+To approve the changes and merge them into your local main branch use the following commands:
+
+git checkout main
+git log origin/main
+Then we can use git merge origin/main:
+
+git merge origin/main
+The origin/main and main branches now point to the same commit, and you are synchronized with the upstream developments.
+
+Git fetch summary
+In review, git fetch is a primary command used to download contents from a remote repository. git fetch is used in conjunction with git remote, git branch, git checkout, and git reset to update a local repository to the state of a remote. The git fetch command is a critical piece of collaborative git work flows. git fetch has similar behavior to git pull, however, git fetch can be considered a safer, nondestructive version.
+
+
+# PULL 
+Realmente PUll son dos operaciones: fetch (descarga la info del remoto) más un merge (la unifica con nuestra rama ACTUAL donde estamos checkout (chequeados)).
+Hay quien dice que nunca hagamos pull, sino un fetch y un merge.
+https://longair.net/blog/2009/04/16/git-fetch-and-merge/
+
+git pull (repo) (rama) esto haría que intentaramos descargarnos la info del remoto de la rama especificada, y luego intente UNIFICAR ESA RAMA CON NUESTRA RAMA ACTUAL en la qu estamos colocados en nuestro git local.
+
+Si la rama donde estamos está trackeando alguna en un remoto, ya hemos visto que no hace falta especificar el repo ni la rama remota, basta con hacer git pull...
+
+Observar que si hemos hecho cambios más recientes que los del repo, nos quedaremos con nuestra versión.
+¿y qué pasa si el mismo fichero tiene modificaciones nuestras y del otro repo?? 
+Lo veremos...
+
+Es mejor hacer git fetch, comprobar, y luego git merge...
+Ejemplo si estamos en una rama trackeada
+git fetch
+comprobar todo ok
+git merge @{u}
+
+
+# PUSH
+git push alias rama: intenta empujar rama alias remoto.
+
+Es lo mismo que antes, pero con push.
+Por supuesto, con el git clone se configurar cosas por defecto, con lo que bastaría para hacer push de nuestra rama principal a la principal del remoto, hacer git push.
+
+observar que aunque hagamos push, lógicamente, si algún fichero tiene una versión posterior a la nuestra pues lógicamente mantendrá su versión más actualizada.
+Realmente nos daría un error, y deberíamos primero hacer pull (para cogernos lo más nuevo del repo) y luego hacer un push para subir nuestras versiones.
+
+Observar q para q esto sirva tenemos q tener los permisos necesarios (lectura, etc), o nos lo preguntará
+Lo normal será que tengamos de lectura automáticamente en muchos casos.
+Al hacer push sí que nos solicitará las claves, aunque se puede minimizar el trabajo con ssh (se crea la huella o algo así y se le mete, por ejemplo en github, en un menú....
+
+Hay varios modos de funcionamiento del push, y la de defecto depende de nuestra versión... se pueden cambiar.
+modalidad matching: significa que se sincronizan TODAS LAS RAMAS. Es el defecto en las versiones antiguas de git.
+modalidad simple: se hace push de la rama activa sólo, y va hasta la rama de la que hemos hecho inicialmente el pull. 
+Se puede cambiar con git config --global  push.default (matching o simple).
+
+observar que podemos tb cambiar opciones locales para un repo concreto con git conofig --local etc....
+
+Otras opcioens son: current, nothing, upstream...
+
+
+
+#FORKING
+Imaginemos que existe un proyecto y queremos contribuir. Podemos hacer lo siguiente...
+En Github hacer fork en el repo de otro usuario significa que nos crea una copia de ese repositorio en nuestra cuenta
+Así podremos ir modificando en local, haciendo push, etc, sin ningún problema porque ya sería nuestro (aunque aparecerían
+los datos del creador, etc). Además, cuando hubiéramos hecho un trabajo significativo, podríamos solicitar un pull request
+para que se integraran estos cambios en el repo remoto original...
+
+si queremos contribuir lo que haremos es:
+0) Fork...
+0.1) en local, ya hacemos git clone dirección_de_nuestro_fork...
+1) Crear en local una nueva rama en la que trabajaremos.
+git branch nueva_rama
+1.5) nos colocamos en esta nueva rama...
+git checkout nueva_rama
+1.6) Hacer los cambios...
+1.7) añadirlos git add
+1.8) hacer el commit
+
+2) Cuando hayamos terminado el trabajo (en la rama) haremos un push de la rama al fork que tenemos en nuestro repo.
+git push origin(que es nuestro-fork) nueva_rama
+Con esto ya tenemos nuestra nueva rama de desarrollo tanto en local, como en nuestro fork...
+3) Ahora nos queda hacer un pull request...
+Para ello lo que haremos es ir a nuestro repo (que es un fork del original de otra persona), y elegimos la rama nueva 
+que creamos para nuestro desarrollo. Ahora simplemente apretar "pull request"...
+Al hacer esto nos dirá si hay algún conflicto entre nuestra nueva rama y la principal del repo original, etc.
+Este pull request le aparecerá al dueño del repo original, para que lo autorizo, nos diga algo, etc...
+El dueño, nos podrá pedir aclaraciones, que hagamos algún cambio en el código, autorizar, o denegar , por supeusto.
+Si, pore ejemplo, nos dijera que necesitamos hacer algún cambio más, pues simplemente hacer los cambios en nuestro git local y volverlos a enviar a la rama del github y contestarle en la página del pull request q ya está hecho.
+
+4) Si fuéramos dueños, qué hacer ante un pull request??
+Si somos los dueños se nos enviará un mail avisándonos del pull request, con el enlace al pull request concreto..
+Acemás, siempre podremos ver los pull request q tenemos pendientes en la pestaña del repo en github
+La página del pull request tiene varias pestañas:
+a) Conversation: para poder conversar con el que nos lo hizo, para pedirle aclaraciones, que añade alguna cosa pendiente, aclarar
+incompatibilidades o problemas, etc... El solicitante nos responderá, nos avisará de cuando vuelve a tener algún cambio solicitado por nosotros, etc.
+Por supuesto, si vemos todo ok, podemos acceder al pull request!!
+También podremos denegarlo.
+
+b(Merge the change: abajo de la página de las conversaciones con el solicitante tb tendremos el botón para acceder al merge.
+
+c) También tenemos una opción abajo para cerrar el pull request.
+
+
+# Cómo mantener nuestro fork del repo original siempre actualizado???
+Si queremos participar en el proyecto, siempre tendremos q, debemos en cuanto, actualizar nuestro fork l´gociamente con 
+el estado actual del repo remoto principal, que no es el nuestro...
+Para ello, en el git...
+si hacemos git remote -v veremos que tenemos origin apuntando a nuestro repo en github.
+Debemos añadir el repo original, que no es nuestro, pero que tiene todo actualizado, claro, al ser el principal del proyecto.
+0) git remote add upstream (o el alias que queramos) dirección_del_repo_original
+
+Ahora, de vez en  cuando, hay que descargar el código del repo original...
+1) git fetch upstream: descargamos las últimas versiones con el original remoto...
+2)git checkout master : ahora nos colocamos en nuestro master
+3)git merge upstream/master : o sea, hacemos merge del upstream/master con nuestra rama actual, que es la principal tb.
+Puede ser que al hacer esto surjan algunos conflictos, que arreglaremos editando los ficheros conflictivos y arreglando todo como anteriormente hemos explicado.
+
+Realmente es un ciclo el colaborar en el proyecto...
+1º hacemos un fork del repo original y así ya es "nuestro" y lo metemos en nuestro git local.
+Luego hacer este ciclo...
+fetch (aquí consideramos tb nuestro fork y el git clone) ->
+merge -> (ahora ya tenemos como el original)
+change -> cambiamos a una rama nuestra y vamos cambiandola
+commit y push -> cuando ya esté la rama, la empujamos a nuestro github, a la rama nueva, y 
+open pull request.... solicitamos el pull request....
+
+Obviamente, imagino que antes de hacer el nuevo fetch esperamos a ver qué nos contesta a nuestro pull request anterior, claro!!!
+ya cuando esté integrado nuestro trabajo es cuando haremos el fetch y el merge, así tendremos el master ya con nuestros cambios
+aceptados, y quizas otros cambios de otras personas también!!!
+
+Pendiente, hacer el ejercicio final del tema 6 (una vez me acepte el pull request).
+
+tipos de merge:
+fast forward... combinamos la rama principal con la otra... pero no habíamos hecho ningún cambio (Commit) adicional a la rama principal... entonces para unificar simplemente llevar la punta de main a que sea la punta de la rama nueva... No se crea ningún commit nuevo
+
+3 way merge: unificar dos ramas que han avanzado las dos desde que se dividieron, mediante un commit nuevo que integra los cambios de ambas ramas...
+Observar que tras el merge, la rama secundaria sigue funcionando (si queremos) y le faltan cosas de la principal... la principal tendrá todo.. 
+Normalmente cuando integramos la nueva rama, lo que se suele hacer es borrarla....
+(si se da por completado el desarrollo)
+
+
+# qué pasa si tenemos un git local... cómo lo subimos a github??
+1º creamos un nuevo repo remoto en github, elegiremos el nombre y no crearemos nada de estructura
+2º copiamos la dirección del repo remoto y le decimos al git que vamos a usar un repo remoto 
+git remote add origin https://github.com/Miguel-Ojeda/alphabets.git   (el repo de github vacío que hemos creado)
+git remote --verbose (comprobamos que está bien el repo remoto)
+3º hacer el push...
+git push origin master
+(creo que vale solo con git push)
+
+Las instrucciones que me daba el github para hacer esto...
+git remote add origin https://github.com/Miguel-Ojeda/alphabets.git
+git branch -M main   (esto creo que no es necesario, es para asegurarse de que la rama principal se llama main, y si no lo es la renombra...)
+git push -u origin main     (creo que la -u es lo mismo que --set-upstream, y es para que cree tb. la rama en el remoto)
+me parece más fácil como en el libro: git push origin master    (o sea, empujarlo al origin, rama master)
+
+
+# git checkout para volver a una versión anterior
+Quizás deseamos volver a una versión anterior del proyecto, para intentarlo de nuevo de otra forma!!
+Si queremos hacerlo, observar que para que los cambios que hagamos sean persistentes, debemos crear luego una rama... Veamos:
+
+git checkout commit
+Nos avisará d q estamos en modo detached, que significa que cualquier cambio y commit que hagamos se perderán...
+tan pronto como hagamos otro checkout
+
+La única opción para no perder los cambios en estado detached, es crear una nueva rama...
+O sea, si hacemos git checkout commit_anterior
+Nos avisa estado detached...
+crear rama y hacer switch a esa rama: git checkout -b nueva_rama
+hacer cambios, ya dentro de la rama...
+hacer git add y el commit....
+guardará el commit, pq va a continuación del commit anterior, pero en una ramificación...
+
+Si queremos pasar los cambios de la rama a master debemos hacer el merge...
+primero ir a la rama master: git checkout master
+ahora el merge: git merge rama
+si hay conflictos, como siempre, arreglara
+
+si no necesitamos más la rama de desarrollo, podemos eliminarla...
+git branch -D rama
+
+# git reset --hard
+Sirve para cambiar la historia... nos hacer que el HEAD sea el commit que le digamos... y elimina los commits posteriores
+como si nunca hubiesen existido!!
+CUidado, es mejor no usarlo... si están mal casi mejor el git reverse, pq así no perderemos el historial con todos los cambios.
+git reset --hard hash_commit
+
+#git rebase
+Imagina que hemos partido de main,y creamos una rama nueva, test, y trabajmos en ella
+Estando en test...
+git rebase main sirve para recolocar, reaplicar (rebase) los commits que se han hecho en test (desde que se bifurcó de l original) como si hubieran ocurrido al final de la rama main. Así podemos pasar de una estructura en ramas paralelas a otra lineal...
+Después de recolocar la rama, y haber hecho luego un merge (que ya sera fast-forward) podríamos eliminar la rama test...
+
+Ejemplo:
+creamos rama test como rammificación de main
+Trabajamos en test
+Imagina q también hemos trabajdo en main (es lo mismo, pero para que sea caso general)
+¿Cómo llevar, unificar, los cambios de test a main? DOs opciones:
+Opción 1: clásico merge (en este caso 3 way)
+git checkout main
+git merge test
+Esto creará un nuevo commit (pq es un 3way merge) que tendrá como padres a dos commits (el anterior último de main y el anterior último de test).
+Ahora ya podemos eliminar, si queremos, test.
+
+Opción 2:
+estando en la rama test...
+git rebase main ... lo que hace es buscar el ancestro común de ambas ramas, y luego, reubica, reaplica los commits de la rama test a partir de la punta de la rama main
+Observar que esto cambia el historial de los commits de la rama test... crea nuevos commits, aunque equivalentes... que sustituyen a los originales...
+Ahora hacemos git checkout main
+git merge test  (será un fast-forward... no se crea ningún commit nuevo
+Ya podríamos , si queremos, eliminar la rama test
+
+Rebasing enables fast-forward merges by moving a branch to the tip of another branch. It effectively eliminates the need for merge commits, resulting in a completely linear history. To an outside
+observer, it will seem as though you created every part of your project in a neatly planned sequence, even though you may have explored various alternatives or developed unrelated features in parallel. Rebasing gives you the power to choose exactly what gets stored in your repositories.
+
+
+git rebase -i rama (o main) nos permite configurar como es el rebase
+(nos crea un fichero que podemos modificar para ello)
+
+IMPORTANTE: git rest --hard y git rebase cambian el historial (cosa nada aconsejable), por ello, como mucho, utilizarlo
+en nuestros gits personales, nada de hacerlo en un git colaborativo pq habría problemas luego!!!!
+
+Obse. podemos hacer rebase de una rama sin estar chequeados en la rama
+git rebase master server 
+This replays your server work on top of your master work
+
+# guardando cambios sin hacer el commit pq no toca todavía... (queremos terminar algo, pero vamos a dejarlo ya
+# y no queremos hacer el commit todavía)
+Suponemos que hacemos cambios a los ficheros
+Ahora hacemos el stage de los cambios con git add
+Si ahora no queremos hacer el commit (por el motivo que sea)
+pero no queremos perder los cambios, lo que debemos hacer es
+git stash: lo que hace es guardar el estado del working directory... (pero sin hacer commit)
+Con esto conseguimos que nuestro wd esté en estado clean... sin hacer commit (quizás pq queramos terminar antes otra cosa)
+Podemos ver los cambios guardados sin commit con:
+git stash list  (muestra datos del stash)
+git stash show  (nos muestra fichero por fichero los cambios)
+
+Cuando queramos guardar todo a un commit sería...
+git stash apply
+
+
+# ESTRUCTURA DEL .git
+dentro del directorio .git está el directorio de objetos...
+Podemos listar todo lo que hay con find objects
+O sea, si estuviéramos en el directorio principal del repo haríamos:
+find ./.git/objects y nos mostraría todos los objetos que hay en el almacén (blobs, árboles, commits), con su nombre que corresponde realmente al hash_id de su contenido... (bueno, los dos primeros caracteres del nombre los sacaríamos del directorio donde está)
+
+Ahora, una vez conocemos el hash, podemos utilizar, si quisiéramos conocer más detalles sobre los objetos...
+git cat-file -t hash (o branch, o ref) nos daría el tipo de objeto (árbol, commit, blob)
+git cat-file -p (--pretty) nos mostraría el contenido...
+
+Observar que cada commit posee, como primera línea, a un puntero a un tree (directorio).
+Además tb. en la segunda línea nos aparece el parent, que nos indica el hash del commit previo.
+ 
+O sea, dentro de cada objeto, podemos ver sus contenidos con git cat-file -p; además si es un commit nos indica un 
+directorio y el parent, así como otros objetos...
+Si vemos el contenido de un objeto tipo blob, pues veremos su contenido...
+
+INDEX file es la stage area donde agrupamos los cambios antes de hacer el commit.
+
+# utilidad grep
+Buscar cosas, por ejemplo el apartado 7.5 del libro pro git
+https://git-scm.com/book/en/v2/Git-Tools-Searching
+
+
+
+
+
+
+
+
