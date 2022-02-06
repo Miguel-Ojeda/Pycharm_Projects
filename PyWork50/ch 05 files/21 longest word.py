@@ -47,10 +47,10 @@ def find_longest_words(filename):
 
 
 def find_all_longest_words(directory):
-    ''' mira en cada fichero cuál es la palabra más larga...
-    '''
+    """ mira en cada fichero cuál es la palabra más larga...
+    """
     resultado = dict()
-    # Devolveremos un diccionario, cuyas claves van a ser los nombres de los ficheros
+    # Devolveremos un diccionario, cuyas claves van a ser los nombres de los ficheros                           gfgfgsfgfgfdgfg
     # y sus values el diccionario que devuelve la función find_longest_word
     path_directorio = Path(directory)
     # Por si acaso, sólo miramos en los que tienen extensión txt
