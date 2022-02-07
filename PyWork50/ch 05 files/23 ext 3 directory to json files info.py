@@ -15,6 +15,7 @@ import json
 # import arrow
 import time
 
+
 def save_stats_dir_json(directorio):
     directorio = Path(directorio)
     data = []
@@ -90,8 +91,6 @@ def display_stats_dir_json_v2(json_file):
           f'fue modificado el {mod_time_list[min_mot_time_index]}')
     print(f'El elemento modificado hace menos tiempo es {file_name_list[max_mot_time_index]}",',
           f'fue modificado el {mod_time_list[max_mot_time_index]}')
-
-
 
 
 directorio = 'C:/users/Miguel'

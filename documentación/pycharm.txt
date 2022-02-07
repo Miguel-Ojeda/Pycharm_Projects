@@ -1,0 +1,25 @@
+Context actions: Alt Intro
+Search for actions: ctrl Shift A o shift 2 veces
+
+Selección:
+ctrl w... es acumulativo, empezamos por la palabra, luego cadena, luego línea, luego bloque, luego...
+
+Duplicar y borrar líneas
+Ctrl D duplicar lo que esté seleccionado
+Ctrl Y para borrar
+
+Moviendo selecciones...
+Alt shift flecha arriba o abajo subo o baja la línea
+Ctrl shift flecha arr o abajo sube o baja todo el método
+
+Colapsar código donde estamos
+Ctrl -
+Descolapsar ctrl +
+
+Colapsar todo el código del fichero: 
+ctrl shift -
+Descolapsar con +
+
+Surround sirve para meter el código dentro de otro bloque estructura (try/except, if ......
+Ctrl Alt T
+Para deshacer (unwrap) Ctrl Shift Supr
