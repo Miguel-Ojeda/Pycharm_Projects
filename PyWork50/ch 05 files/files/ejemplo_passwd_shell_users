@@ -1,0 +1,10 @@
+Lista de shells con sus usuarios
+--> /usr/bin/ksh: root, invscout, paul, jdoe
+--> /bin/bash: meera, root
+--> : daemon, bin, sys, adm, uucp, guest, nobody, lpd, news
+--> /bin/false: lp
+--> /usr/sbin/uucp/uucico: nuucp
+--> /sbin/nologin: bin, daemon, adm, lp, mail, uucp, operator, games, gopher, ftp, nobody, nscd, vcsa, ntp, pcap, dbus, avahi, rpc, mailnull, smmsp, apache, sshd, dovecot, oprofile, rpcuser, nfsnobody, xfs, haldaemon, avahi-autoipd, gdm, sabayon
+--> /bin/sync: sync
+--> /sbin/shutdown: shutdown
+--> /sbin/halt: halt

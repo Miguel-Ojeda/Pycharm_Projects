@@ -1,0 +1,55 @@
+tnemmoc a si sihT #
+em erongi dluohs uoY #
+hsab/nib/:toor/:toor:0:0:x:toor
+nigolon/nibs/rsu/:nibs/rsu/:nomead:1:1:x:nomead
+nigolon/nibs/rsu/:nib/:nib:2:2:x:nib
+nigolon/nibs/rsu/:ved/:sys:3:3:x:sys
+cnys/nib/:nib/:cnys:43556:4:x:cnys
+nigolon/nibs/rsu/:semag/rsu/:semag:06:5:x:semag
+nigolon/nibs/rsu/:nam/ehcac/rav/:nam:21:6:x:nam
+nigolon/nibs/rsu/:dpl/loops/rav/:pl:7:7:x:pl
+nigolon/nibs/rsu/:liam/rav/:liam:8:8:x:liam
+
+
+
+nigolon/nibs/rsu/:swen/loops/rav/:swen:9:9:x:swen
+nigolon/nibs/rsu/:pcuu/loops/rav/:pcuu:01:01:x:pcuu
+nigolon/nibs/rsu/:nib/:yxorp:31:31:x:yxorp
+nigolon/nibs/rsu/:www/rav/:atad-www:33:33:x:atad-www
+nigolon/nibs/rsu/:spukcab/rav/:pukcab:43:43:x:pukcab
+nigolon/nibs/rsu/:tsil/rav/:reganaM tsiL gniliaM:83:83:x:tsil
+nigolon/nibs/rsu/:dcri/nur/rav/:dcri:93:93:x:cri
+nigolon/nibs/rsu/:stang/bil/rav/:)nimda( metsyS gnitropeR-guB stanG:14:14:x:stang
+
+nigolon/nibs/rsu/:tnetsixenon/:ydobon:43556:43556:x:ydobon
+eslaf/nib/:golsys/emoh/::401:101:x:golsys
+eslaf/nib/:subd/nur/rav/::601:201:x:subegassem
+eslaf/nib/:epacsdnal/bil/rav/::901:301:x:epacsdnal
+hsab/nib/:icj/emoh/::559:559:x:icj
+nigolon/nibs/rsu/:dhss/nur/rav/::43556:401:x:dhss
+hsab/nib/:resu/emoh/:,,,resu:0001:0001:x:resu
+hsab/nib/:nevuer/emoh/:,,,renreL .M nevueR:1001:1001:x:nevuer
+eslaf/nib/:xiftsop/loops/rav/::311:501:x:xiftsop
+eslaf/nib/:droloc/bil/rav/:,,,nomead tnemeganam ruoloc droloc:611:601:x:droloc
+hsab/nib/:lqsergtsop/bil/rav/:,,,rotartsinimda LQSergtsoP:711:701:x:sergtsop
+eslaf/nib/:tocevod/bil/rsu/:,,,revres liam tocevoD:911:801:x:tocevod
+eslaf/nib/:tnetsixenon/:,,,resu nigol tocevoD:021:901:x:llunevod
+eslaf/nib/:yergtsop/bil/rav/::121:011:x:yergtsop
+hs/nib/:nissassamaps/bil/rav/::221:111:x:dmaps-naibed
+eslaf/nib/:tnetsixenon/:,,,dehcacmeM:421:311:x:ehcacmem
+hsab/nib/:idaneg/emoh/:,,,oknehcinzeR idaneG:3001:2001:x:idaneg
+hsab/nib/:arihs/emoh/:,,,namdeirF arihS:4001:3001:x:arihs
+hsab/nib/:arata/emoh/:,,,namdeirF-renreL aratA:5001:4001:x:arata
+hsab/nib/:amkihs/emoh/:,,,namdeirF-renreL amkihS:6001:5001:x:amkihs
+hsab/nib/:ztoma/emoh/:,,,namdeirF-renreL ztomA:7001:6001:x:ztoma
+eslaf/nib/:tnetsixenon/:,,,revreS LQSyM:521:411:x:lqsym
+eslaf/nib/:vamalc/bil/rav/::621:511:x:vamalc
+hs/nib/:sivama/bil/rav/:,,,resu metsys SiVaMA:721:611:x:sivama
+eslaf/nib/:mikdnepo/nur/rav/::821:711:x:mikdnepo
+nigolon/nib/:sider/baltig/tpo/rav/::9001:999:x:sider-baltig
+hs/nib/:lqsergtsop/baltig/tpo/rav/::0101:899:x:lqsp-baltig
+hsab/nib/:tig/emoh/:,,,baLtiG:8001:7001:x:tig
+eslaf/nib/:cramdnepo/nur/rav/::921:811:x:cramdnepo
+eslaf/nib/:nohtyp-retlim-mikd/nur/rav/::031:911:x:nohtyp-retlim-mikd
+hsab/nib/:yolped/emoh/:,,,yolpeD:1101:8001:x:yolped
+eslaf/nib/:sider/bil/rav/:,,,revres sider:321:211:x:sider

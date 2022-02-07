@@ -1,0 +1,176 @@
+[
+	{
+		"file": " - copia.bashrc",
+		"size": 75,
+		"mod. time": 1642958437.2604482,
+		"mod. time string": "Sun Jan 23 17:20:37 2022"
+	},
+	{
+		"file": ".bashrc",
+		"size": 64,
+		"mod. time": 1643017100.3379648,
+		"mod. time string": "Mon Jan 24 09:38:20 2022"
+	},
+	{
+		"file": ".bash_history",
+		"size": 2883,
+		"mod. time": 1644065740.325668,
+		"mod. time string": "Sat Feb  5 12:55:40 2022"
+	},
+	{
+		"file": ".bash_profile",
+		"size": 99,
+		"mod. time": 1642956373.9567783,
+		"mod. time string": "Sun Jan 23 16:46:13 2022"
+	},
+	{
+		"file": ".gitconfig",
+		"size": 83,
+		"mod. time": 1640426324.0091016,
+		"mod. time string": "Sat Dec 25 09:58:44 2021"
+	},
+	{
+		"file": ".lesshst",
+		"size": 20,
+		"mod. time": 1643037505.9771583,
+		"mod. time string": "Mon Jan 24 15:18:25 2022"
+	},
+	{
+		"file": ".pdfbox.cache",
+		"size": 63045,
+		"mod. time": 1642609662.542879,
+		"mod. time string": "Wed Jan 19 16:27:42 2022"
+	},
+	{
+		"file": "bacon.txt",
+		"size": 75,
+		"mod. time": 1644071617.8010035,
+		"mod. time string": "Sat Feb  5 14:33:37 2022"
+	},
+	{
+		"file": "Game Development Using Python.pdf",
+		"size": 14582501,
+		"mod. time": 1641399772.163385,
+		"mod. time string": "Wed Jan  5 16:22:52 2022"
+	},
+	{
+		"file": "Game of Life (extraido de new turing omnibus).pdf",
+		"size": 1331920,
+		"mod. time": 1641405108.0837164,
+		"mod. time string": "Wed Jan  5 17:51:48 2022"
+	},
+	{
+		"file": "IdeaProjects.7z",
+		"size": 6247,
+		"mod. time": 1570265855.3777678,
+		"mod. time string": "Sat Oct  5 09:57:35 2019"
+	},
+	{
+		"file": "jandedobbeleer.omp.json",
+		"size": 7231,
+		"mod. time": 1642685824.0,
+		"mod. time string": "Thu Jan 20 13:37:04 2022"
+	},
+	{
+		"file": "mi-tema.json",
+		"size": 4771,
+		"mod. time": 1643017026.8412578,
+		"mod. time string": "Mon Jan 24 09:37:06 2022"
+	},
+	{
+		"file": "Microsoft.PowerShell_profile.ps1",
+		"size": 74,
+		"mod. time": 1643029665.0530787,
+		"mod. time string": "Mon Jan 24 13:07:45 2022"
+	},
+	{
+		"file": "mytheme.omp.json",
+		"size": 5756,
+		"mod. time": 1642958977.4999762,
+		"mod. time string": "Sun Jan 23 17:29:37 2022"
+	},
+	{
+		"file": "NTUSER.DAT",
+		"size": 11796480,
+		"mod. time": 1644185252.9720109,
+		"mod. time string": "Sun Feb  6 22:07:32 2022"
+	},
+	{
+		"file": "ntuser.dat.LOG1",
+		"size": 1572864,
+		"mod. time": 1600457083.547295,
+		"mod. time string": "Fri Sep 18 20:24:43 2020"
+	},
+	{
+		"file": "ntuser.dat.LOG2",
+		"size": 2914304,
+		"mod. time": 1600457083.547295,
+		"mod. time string": "Fri Sep 18 20:24:43 2020"
+	},
+	{
+		"file": "NTUSER.DAT{e6a49535-f9ec-11ea-85f3-9033c3f7a60b}.TM.blf",
+		"size": 65536,
+		"mod. time": 1600457083.6723087,
+		"mod. time string": "Fri Sep 18 20:24:43 2020"
+	},
+	{
+		"file": "NTUSER.DAT{e6a49535-f9ec-11ea-85f3-9033c3f7a60b}.TMContainer00000000000000000001.regtrans-ms",
+		"size": 524288,
+		"mod. time": 1600457083.5629227,
+		"mod. time string": "Fri Sep 18 20:24:43 2020"
+	},
+	{
+		"file": "NTUSER.DAT{e6a49535-f9ec-11ea-85f3-9033c3f7a60b}.TMContainer00000000000000000002.regtrans-ms",
+		"size": 524288,
+		"mod. time": 1600457083.5629227,
+		"mod. time string": "Fri Sep 18 20:24:43 2020"
+	},
+	{
+		"file": "ntuser.ini",
+		"size": 20,
+		"mod. time": 1600457804.8005743,
+		"mod. time string": "Fri Sep 18 20:36:44 2020"
+	},
+	{
+		"file": "profile",
+		"size": 71,
+		"mod. time": 1642958135.9632096,
+		"mod. time string": "Sun Jan 23 17:15:35 2022"
+	},
+	{
+		"file": "spam.txt",
+		"size": 206,
+		"mod. time": 1642370620.3194075,
+		"mod. time string": "Sun Jan 16 22:03:40 2022"
+	},
+	{
+		"file": "spam01.txt",
+		"size": 206,
+		"mod. time": 1642370620.3194075,
+		"mod. time string": "Sun Jan 16 22:03:40 2022"
+	},
+	{
+		"file": "spam02.txt",
+		"size": 206,
+		"mod. time": 1642370620.3194075,
+		"mod. time string": "Sun Jan 16 22:03:40 2022"
+	},
+	{
+		"file": "spam03.txt",
+		"size": 206,
+		"mod. time": 1642370620.3194075,
+		"mod. time string": "Sun Jan 16 22:03:40 2022"
+	},
+	{
+		"file": "spam04.txt",
+		"size": 206,
+		"mod. time": 1642370620.3194075,
+		"mod. time string": "Sun Jan 16 22:03:40 2022"
+	},
+	{
+		"file": "spam05.txt",
+		"size": 220,
+		"mod. time": 1644234415.1201718,
+		"mod. time string": "Mon Feb  7 11:46:55 2022"
+	}
+]
