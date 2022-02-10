@@ -112,6 +112,29 @@ pprint.pprint(nietos)
 
 
 
+def get_grandchildren_names_v5(familia):
+    """Esto es como la versión 2, de los diccionarios, pero con tuplas!!"""
+    return sorted([(nieto['name'], nieto['age'])   # Creo primero una lista de tuplas
+                   for nietos in familia.values()
+                   for nieto in nietos], key=operator.itemgetter(1))
+
+
+nietos = get_grandchildren_names_v5(familia)
+pprint.pprint(nietos)
+'''
+[('Penélope', 7),
+ ('Virginia', 10),
+ ('Carla', 12),
+ ('Fran', 13),
+ ('Juan', 14),
+ ('Iris', 15),
+ ('Ana', 16),
+ ('Benito', 18),
+ ('Luisa', 20),
+ ('Lucía', 20),
+ ('Miguel', 25)]
+ '''
+
 
 
 
