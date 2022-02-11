@@ -1,0 +1,9 @@
+# Esto se puede ignorar, todo_ lo que empiece con #
+# Si está vacío pues también...
+
+color='red'
+resolution=1024 x 768
+so=windows
+ip=10.24.12.12
+DNS=9.9.9.9
+user=mojeaco
