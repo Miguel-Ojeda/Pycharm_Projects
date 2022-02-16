@@ -1,0 +1,7 @@
+Este es el fichero 0
+su línea segunda del fichero 0
+línea tercera del fichero 0
+línea cuarta del fichero 0
+línea quinta del fichero 0
+linea sexta del fichero 0 (la quinta es en blanco)
+línea séptima (final) del fichero 0

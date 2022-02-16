@@ -1,0 +1,10 @@
+Este es el fichero 4
+su línea segunda del fichero 4
+línea tercera del fichero 4
+línea cuarta del fichero 4
+línea quinta del fichero 4
+linea sexta del fichero 4
+línea séptima del fichero 4
+línea octava del fichero 4
+línea novena del fichero 4
+línea décima (final) del fichero 4

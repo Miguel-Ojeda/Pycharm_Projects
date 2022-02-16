@@ -1,0 +1,5 @@
+Este es el fichero 2
+su línea segunda del fichero 2
+línea tercera de f2
+línea cuarta del fichero 2 (tercera en blanco)
+línea quinta (final) del fichero 2

@@ -1,0 +1,4 @@
+Este es el fichero 1
+su línea segunda del fichero 1
+línea tercera del fichero 1
+línea cuarta del fichero 1 (FIN)

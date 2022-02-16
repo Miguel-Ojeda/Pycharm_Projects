@@ -1,0 +1,2 @@
+Este es el fichero 3
+su línea segunda del fichero 3 (FIN)
