@@ -5,6 +5,30 @@ sequence of bits (make it iterable and implement __getitem__()).
 Reimplement CompressedGene, using the wrapper.
 """
 
+
+class Entero_Con_Bits:
+    def __init__(self, valor_inicial: int) -> None:
+        self.valor = valor_inicial
+
+    def __getitem__(self, numero_bit) -> bool:
+        """Este metodo nos retorna el valor del bit indicado"""
+        return (self.valor >> numero_bit) & 0b1
+
+    def __setitem__(self, key, value) -> None:
+        """Este metodo nos retorna el valor del bit indicado"""
+        self.valor |= 2 ** key
+
+    def __iter__(self):
+        return self.bits()
+
+    def bits(self):
+        for index in range(self.valor.bit_length()):
+            yield self[index]
+
+    def __repr__(self):
+        return str(self.valor)
+
+
 class Compressed_Gene:
     def __init__(self, secuencia_genetica: str) -> None:
         self._compress(secuencia_genetica)
@@ -59,29 +83,43 @@ class Compressed_Gene:
     #     return self.decompress()
 
 
-
-
-
 if __name__ == '__main__':
-    genes = 'TACGTACAA'
-    gen_bits = Compressed_Gene(genes)
-    print(f'{gen_bits.gene_bits:b}')
-    '''
-    >>> 1110001101100010000
-    Si lo parto queda 1(Sentinel)_11(T)_00(A)_01(C)_10(G)_11(T)_00(A)_01(C)_00(A)_00(A)
-    O sea, se han guardado bien los bits... la compresión
-    '''
-    # veamos ahora si descomprime bien...
-    print(gen_bits)
-    # >>> TACGTACAA  # CORRECTO!!!!
+    n = Entero_Con_Bits(1024)
+    for i in n:
+        print(i)
 
-    # Otra prueba, cogida del libro!!!
-    from sys import getsizeof
-    print('---------------------------\nPrueba 2:')
-    original = "TAGGGATTAACCGTTATATATATATAGCCATGGATCGATTATATAGGGATTAACCGTTATATATATATAGCCATGGATCGATTATA" * 100
-    print(f'El tamaño de la información genética sin comprimir es de {getsizeof(original)} bytes')
-    genetic_bits = Compressed_Gene(original)
-    print(f'El tamaño de la información comprimida es de {getsizeof(genetic_bits)} bytes')
-    print(genetic_bits)
-    if genetic_bits.decompress() == original:
-        print('La información está bien codificada')
+    n[2] = 1
+    n[3] = 1
+    print(n)
+
+    # print(0, n[0])
+    # print(1, n[1])
+    # print(2, n[2])
+    # print(3, n[3])
+    # print(4, n[4])
+    # print(5, n[5])
+    # print(6, n[6])
+    # print(7, n[7])
+
+    # genes = 'TACGTACAA'
+    # gen_bits = Compressed_Gene(genes)
+    # print(f'{gen_bits.gene_bits:b}')
+    # '''
+    # >>> 1110001101100010000
+    # Si lo parto queda 1(Sentinel)_11(T)_00(A)_01(C)_10(G)_11(T)_00(A)_01(C)_00(A)_00(A)
+    # O sea, se han guardado bien los bits... la compresión
+    # '''
+    # # veamos ahora si descomprime bien...
+    # print(gen_bits)
+    # # >>> TACGTACAA  # CORRECTO!!!!
+    #
+    # # Otra prueba, cogida del libro!!!
+    # from sys import getsizeof
+    # print('---------------------------\nPrueba 2:')
+    # original = "TAGGGATTAACCGTTATATATATATAGCCATGGATCGATTATATAGGGATTAACCGTTATATATATATAGCCATGGATCGATTATA" * 100
+    # print(f'El tamaño de la información genética sin comprimir es de {getsizeof(original)} bytes')
+    # genetic_bits = Compressed_Gene(original)
+    # print(f'El tamaño de la información comprimida es de {getsizeof(genetic_bits)} bytes')
+    # print(genetic_bits)
+    # if genetic_bits.decompress() == original:
+    #     print('La información está bien codificada')
