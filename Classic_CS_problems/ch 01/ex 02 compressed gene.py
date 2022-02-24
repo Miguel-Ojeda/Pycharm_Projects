@@ -6,23 +6,23 @@ Reimplement CompressedGene, using the wrapper.
 """
 
 
-class Entero_Con_Bits:
+class Entero_Con_Nucleotidos:
     def __init__(self, valor_inicial: int) -> None:
         self.valor = valor_inicial
 
-    def __getitem__(self, numero_bit) -> bool:
+    def __getitem__(self, numero_nucleotido) -> bool:
         """Este metodo nos retorna el valor del bit indicado"""
-        return (self.valor >> numero_bit) & 0b1
+        return (self.valor >> (2 * numero_nucleotido)) & 0b11
 
-    def __setitem__(self, key, value) -> None:
-        """Este metodo nos retorna el valor del bit indicado"""
-        self.valor |= 2 ** key
+    def __setitem__(self, numero_nucleotido, value) -> None:
+        """Este método nos retorna el valor del bit indicado"""
+        self.valor |= (0b11 & value)  << (2 * numero_nucleotido)
 
     def __iter__(self):
-        return self.bits()
+        return self.nucleotidos()
 
-    def bits(self):
-        for index in range(self.valor.bit_length()):
+    def nucleotidos(self):
+        for index in range((self.valor.bit_length() + 1) // 2):
             yield self[index]
 
     def __repr__(self):
@@ -84,13 +84,13 @@ class Compressed_Gene:
 
 
 if __name__ == '__main__':
-    n = Entero_Con_Bits(1024)
-    for i in n:
-        print(i)
+    n = Entero_Con_Nucleotidos(0)
+    # for i in n:
+    #     print(i)
 
-    n[2] = 1
-    n[3] = 1
-    print(n)
+    n[1] = 3
+    n[3] = 3
+    print(n.valor)
 
     # print(0, n[0])
     # print(1, n[1])
