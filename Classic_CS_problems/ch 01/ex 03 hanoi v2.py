@@ -3,8 +3,9 @@ V2
 """
 import cProfile
 import pprint
+from typing import List, Tuple
 
-Solucion = list[tuple[str, str]]
+Solucion = List[Tuple[str, str]]
 # definimos un Alias para el  tipo de la solucion de Hanoi
 # Por ejemplo, la solución para hanoi de 3 discos es:
 # [('I', 'F'), ('I', 'A'), ('F', 'A'), ('I', 'F'), ('A', 'I'), ('A', 'F'), ('I', 'F')]
@@ -137,4 +138,20 @@ cProfile.run("hanoi(24)")
  33554405    3.662    0.000    3.662    0.000 {method 'append' of 'list' objects}
         1    0.000    0.000    0.000    0.000 {method 'disable' of '_lsprof.Profiler' objects}
        23    0.183    0.008    0.183    0.008 {method 'extend' of 'list' objects}
+'''
+
+# Ojo, al ejecutar en Linux (en máquina virtual) tarda menos de la mitad
+'''Resultado en máquina virtual linux
+33554478 function calls in 11.773 seconds
+
+   Ordered by: standard name
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+        1    0.509    0.509   11.773   11.773 <string>:1(<module>)
+       46    8.992    0.195   10.891    0.237 ex 03 hanoi v2.py:14(transformar)
+        1    0.203    0.203   11.264   11.264 ex 03 hanoi v2.py:25(hanoi)
+        1    0.000    0.000   11.773   11.773 {built-in method builtins.exec}
+ 33554405    1.899    0.000    1.899    0.000 {method 'append' of 'list' objects}
+        1    0.000    0.000    0.000    0.000 {method 'disable' of '_lsprof.Profiler' objects}
+       23    0.170    0.007    0.170    0.007 {method 'extend' of 'list' objects}
 '''
