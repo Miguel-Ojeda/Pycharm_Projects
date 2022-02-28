@@ -1,10 +1,32 @@
 from __future__ import annotations
 
-from typing import Generic, TypeVar, List, Optional, Callable, Set, Deque
+from typing import Generic, TypeVar, List, Optional, Callable, Set, Deque, Iterable, Sequence, Dict
 from collections import deque
+from heapq import heappop, heappush
 
 
 T = TypeVar('T')
+
+
+def linear_contains(iterable: Iterable[T], key: T) -> bool:
+    for item in iterable:
+        if item == key:
+            return True
+    return False
+
+
+def binary_contains(sequence: Sequence[T], key: T) -> bool:
+    low: int = 0
+    high: int = len(sequence) - 1
+    while low <= high:  # while there is still a search space
+        mid: int = (low + high) // 2
+        if sequence[mid] < key:
+            low = mid + 1
+        elif sequence[mid] > key:
+            high = mid - 1
+        else:
+            return True
+    return False
 
 
 class Stack(Generic[T]):
@@ -62,7 +84,7 @@ class Node(Generic[T]):
 
 def dfs(initial: T, goal_test: Callable[[T], bool], successors: Callable[[T], List[T]]) -> Optional[Node[T]]:
     """
-    Es muy potente porque es general... valdría para cualquier estructura, laberinto, etc...
+    Es muy potente porque es general... valdría para cualquier estructura, laberinto, etc.
     Lo único que necesitamos es:
     * Darle una situación inicial,
     * Un callable que nos permite obtener sucesores,
@@ -86,6 +108,7 @@ def dfs(initial: T, goal_test: Callable[[T], bool], successors: Callable[[T], Li
             frontier.push(Node(child, parent=current_node))
     return None
 
+
 def bfs(initial: T, goal_test: Callable[[T], bool], successors: Callable[[T], List[T]]) -> Optional[Node[T]]:
     """
     El algoritmo es exactamente el mismo que del de Depth First Search...
@@ -108,9 +131,6 @@ def bfs(initial: T, goal_test: Callable[[T], bool], successors: Callable[[T], Li
             frontier.push(Node(child, parent=current_node))
 
 
-
-
-
 def node_to_path(node: Node[T]) -> List[T]:
     path: List[T] = [node.state]
     while node.parent:
@@ -118,6 +138,61 @@ def node_to_path(node: Node[T]) -> List[T]:
         path.append(node.state)
     path.reverse()
     return path
+
+
+class PriorityQueue(Generic[T]):
+    def __init__(self):
+        self._container: List[T] = []
+
+    @property
+    def empty(self) -> bool:
+        return not self._container
+
+    def push(self, item: T) -> None:
+        # in by priority
+        heappush(self._container, item)
+
+    def pop(self) -> T:
+        # out by priority
+        return heappop(self._container)
+
+    def __repr__(self) -> str:
+        return repr(self._container)
+
+    # Importante
+    '''
+    To determine the priority of a particular element versus another of its kind,
+    heappush() and heappop(), compare them by using the < operator.
+    This is why we needed to implement __lt__() on Node earlier.
+    One Node is compared to another by looking at its respective f(n),
+    which is simply the sum of the properties cost and heuristic
+    '''
+
+
+def astar(initial: T, goal_test: Callable[[T], bool], successors: Callable[[T], List[T]],
+          heuristic: Callable[[T], float]) -> Optional[Node[T]]:
+    # Algoritmo de búsqueda A*
+    frontier: PriorityQueue[Node[T]] = PriorityQueue()
+    frontier.push(Node(initial, parent=None, cost=0.0, heuristic=heuristic(initial)))
+    # ¡O sea, el costo inicial es 0, pq partimos del nodo initial, no hay que moverse!
+    explored: Dict[T, float] = {initial: 0.0}
+    while not frontier.empty:
+        current_node: Node[T] = frontier.pop()
+        current_state: T = current_node.state
+        if goal_test(current_state):
+            return current_node
+        for child in successors(current_state):
+            new_cost: float = current_node.cost + 1
+            '''
+            Se podría mejorar para casos generales, de momento nos vale así suponiendo un grid
+            en el que nos movemos horizontal o vertical... entonces, al dar un paso más, el costo
+            es el costo actual más 1.
+            '''
+            if child not in explored or explored[child] > new_cost:
+                # ¡O sea, podemos añadirlo incluso si ya está, si el costo calculado es menos que el que figura!!
+                explored[child] = new_cost
+                frontier.push(Node(child, current_node, new_cost, heuristic(child)))
+    return None  # went through everything and never found goal
 
 
 

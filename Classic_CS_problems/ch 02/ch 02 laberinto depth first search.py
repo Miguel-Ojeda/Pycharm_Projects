@@ -3,12 +3,12 @@ from enum import Enum
 from typing import List, NamedTuple, Callable, Optional
 import random
 from math import sqrt
-from generic_search import dfs, Node, node_to_path, bfs
+from generic_search import dfs, Node, node_to_path, bfs, astar
 
 
 class Cell(Enum):
     EMPTY = " "
-    BLOCKED = "X"
+    BLOCKED = "█"
     START = "S"
     GOAL = "G"
     PATH = "*"
@@ -43,7 +43,7 @@ class Maze:
         self.start: MazeLocation = start
 
         if goal is None:
-            goal = MazeLocation(row=rows-1, column=columns - 1)
+            goal = MazeLocation(row=rows - 1, column=columns - 1)
         self.goal: MazeLocation = goal
         '''
         El grid es una lista de filas de celdas.... grid = [fila-1, fila-2, fila-3, ...]
@@ -97,8 +97,22 @@ class Maze:
         self._grid[self.goal.row][self.goal.column] = Cell.GOAL
 
 
+def manhattan_distance(goal: MazeLocation) -> Callable[[MazeLocation], float]:
+    """
+    Usaremos esta función de heurística para el algoritmo A* (astar)
+    Nos devuelve una función que nos calcula la 'distancia - manhattan'
+    de cualquier punto a nuestro objetivo...
+    """
+    def distance(ml: MazeLocation) -> float:
+        x_dist: int = abs(ml.column - goal.column)
+        y_dist: int = abs(ml.row - goal.row)
+        return x_dist + y_dist
+
+    return distance
+
+
 if __name__ == '__main__':
-    laberinto = Maze(rows=10, columns=10, sparseness=.22)
+    laberinto = Maze(rows=40, columns=40, sparseness=.30)
     print(laberinto)
     solution_1: Optional[Node[MazeLocation]] = dfs(laberinto.start, laberinto.goal_test, laberinto.successors)
     if solution_1 is None:
@@ -117,3 +131,16 @@ if __name__ == '__main__':
         laberinto.mark(path_2)
         print(laberinto)
         laberinto.clear(path_2)
+
+    # Creamos la función para la heurística del algoritmo A*
+    heuristica: Callable[[MazeLocation], float] = manhattan_distance(laberinto.goal)
+    solution_3: Optional[Node[MazeLocation]] = astar(laberinto.start, laberinto.goal_test,
+                                                     laberinto.successors, heuristica)
+    if solution_3 is None:
+        print("No solution found using A*!")
+    else:
+        path_3: List[MazeLocation] = node_to_path(solution_3)
+        laberinto.mark(path_3)
+        print(laberinto)
+        laberinto.clear(path_3)
+
