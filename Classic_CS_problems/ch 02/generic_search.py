@@ -1,9 +1,31 @@
 from __future__ import annotations
 
-from typing import Generic, TypeVar, List, Optional, Callable, Set, Deque, Iterable, Sequence, Dict
+from __future__ import annotations
+from typing import TypeVar, Iterable, Sequence, Generic, List, Callable, Set, Deque, Dict, Any, Optional
+# from typing_extensions import Protocol
+from heapq import heappush, heappop
 from collections import deque
-from heapq import heappop, heappush
 
+
+'''
+C = TypeVar("C", bound="Comparable")
+
+class Comparable(Protocol):
+    def __eq__(self, other: Any) -> bool:
+        ...
+
+    def __lt__(self: C, other: C) -> bool:
+        ...
+
+    def __gt__(self: C, other: C) -> bool:
+        return (not self < other) and self != other
+
+    def __le__(self: C, other: C) -> bool:
+        return self < other or self == other
+
+    def __ge__(self: C, other: C) -> bool:
+        return not self < other
+'''
 
 T = TypeVar('T')
 
@@ -82,7 +104,9 @@ class Node(Generic[T]):
         return (self.cost + self.heuristic) < (other.cost + other.heuristic)
 
 
-def dfs(initial: T, goal_test: Callable[[T], bool], successors: Callable[[T], List[T]]) -> Optional[Node[T]]:
+def dfs(initial: T, goal_test: Callable[[T], bool], successors: Callable[[T], List[T]])\
+        -> tuple[int, Optional[Node[T]]]:
+    # el retorno es una tupla, con el número de veces que tardamos, y el nodo...
     """
     Es muy potente porque es general... valdría para cualquier estructura, laberinto, etc.
     Lo único que necesitamos es:
@@ -95,21 +119,24 @@ def dfs(initial: T, goal_test: Callable[[T], bool], successors: Callable[[T], Li
     frontier: Stack[Node[T]] = Stack()
     frontier.push(Node(initial, parent=None))
     explored: Set[T] = {initial}
-
+    estados_recorridos = 0
     while not frontier.empty:
+        estados_recorridos += 1
         current_node: Node[T] = frontier.pop()
         current_state: T = current_node.state
         if goal_test(current_state):
-            return current_node
+            return estados_recorridos, current_node
         for child in successors(current_state):
             if child in explored:
                 continue
             explored.add(child)
             frontier.push(Node(child, parent=current_node))
-    return None
+    return estados_recorridos, None  # went through everything and never found goal
 
 
-def bfs(initial: T, goal_test: Callable[[T], bool], successors: Callable[[T], List[T]]) -> Optional[Node[T]]:
+def bfs(initial: T, goal_test: Callable[[T], bool], successors: Callable[[T], List[T]])\
+        -> tuple[int, Optional[Node[T]]]:
+    # el retorno es una tupla, con el número de veces que tardamos, y el nodo...
     """
     El algoritmo es exactamente el mismo que del de Depth First Search...
     La diferencia está en que utilizamos una cola en lugar de un stack...
@@ -118,17 +145,19 @@ def bfs(initial: T, goal_test: Callable[[T], bool], successors: Callable[[T], Li
     frontier: Queue[Node[T]] = Queue()
     frontier.push(Node(initial, parent=None))
     explored: Set[T] = {initial}
-
+    estados_recorridos = 0
     while not frontier.empty:
+        estados_recorridos += 1
         current_node: Node[T] = frontier.pop()
         current_state: T = current_node.state
         if goal_test(current_state):
-            return current_node
+            return estados_recorridos, current_node
         for child in successors(current_state):
             if child in explored:
                 continue
             explored.add(child)
             frontier.push(Node(child, parent=current_node))
+    return estados_recorridos, None  # went through everything and never found goal
 
 
 def node_to_path(node: Node[T]) -> List[T]:
@@ -170,17 +199,19 @@ class PriorityQueue(Generic[T]):
 
 
 def astar(initial: T, goal_test: Callable[[T], bool], successors: Callable[[T], List[T]],
-          heuristic: Callable[[T], float]) -> Optional[Node[T]]:
+          heuristic: Callable[[T], float]) -> tuple[int, Optional[Node[T]]]:
     # Algoritmo de búsqueda A*
     frontier: PriorityQueue[Node[T]] = PriorityQueue()
     frontier.push(Node(initial, parent=None, cost=0.0, heuristic=heuristic(initial)))
     # ¡O sea, el costo inicial es 0, pq partimos del nodo initial, no hay que moverse!
     explored: Dict[T, float] = {initial: 0.0}
+    estados_recorridos = 0
     while not frontier.empty:
+        estados_recorridos += 1
         current_node: Node[T] = frontier.pop()
         current_state: T = current_node.state
         if goal_test(current_state):
-            return current_node
+            return estados_recorridos, current_node
         for child in successors(current_state):
             new_cost: float = current_node.cost + 1
             '''
@@ -192,7 +223,7 @@ def astar(initial: T, goal_test: Callable[[T], bool], successors: Callable[[T], 
                 # ¡O sea, podemos añadirlo incluso si ya está, si el costo calculado es menos que el que figura!!
                 explored[child] = new_cost
                 frontier.push(Node(child, current_node, new_cost, heuristic(child)))
-    return None  # went through everything and never found goal
+    return estados_recorridos, None  # went through everything and never found goal
 
 
 

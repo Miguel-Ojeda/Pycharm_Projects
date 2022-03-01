@@ -114,33 +114,42 @@ def manhattan_distance(goal: MazeLocation) -> Callable[[MazeLocation], float]:
 if __name__ == '__main__':
     laberinto = Maze(rows=40, columns=40, sparseness=.30)
     print(laberinto)
-    solution_1: Optional[Node[MazeLocation]] = dfs(laberinto.start, laberinto.goal_test, laberinto.successors)
+    solution_1: Optional[Node[MazeLocation]]
+    estados_recorridos, solution_1 = dfs(laberinto.start, laberinto.goal_test, laberinto.successors)
     if solution_1 is None:
         print('No tiene solución DFS el laberinto')
     else:
         path_1 = node_to_path(solution_1)
         laberinto.mark(path_1)
+        print('La solución DFS tiene estados_recorridos:', estados_recorridos)
+        print('La solución consta de pasos:', len(path_1))
         print(laberinto)
         laberinto.clear(path_1)
 
-    solution_2: Optional[Node[MazeLocation]] = bfs(laberinto.start, laberinto.goal_test, laberinto.successors)
+    solution_2: Optional[Node[MazeLocation]]
+    estados_recorridos, solution_2 = bfs(laberinto.start, laberinto.goal_test, laberinto.successors)
     if solution_2 is None:
         print('No tiene solución  BFS el laberinto')
     else:
         path_2 = node_to_path(solution_2)
         laberinto.mark(path_2)
+        print('La solución BFS tiene estados_recorridos:', estados_recorridos)
+        print('La solución consta de pasos:', len(path_2))
         print(laberinto)
         laberinto.clear(path_2)
 
     # Creamos la función para la heurística del algoritmo A*
     heuristica: Callable[[MazeLocation], float] = manhattan_distance(laberinto.goal)
-    solution_3: Optional[Node[MazeLocation]] = astar(laberinto.start, laberinto.goal_test,
+    solution_3: Optional[Node[MazeLocation]]
+    estados_recorridos, solution_3 = astar(laberinto.start, laberinto.goal_test,
                                                      laberinto.successors, heuristica)
     if solution_3 is None:
         print("No solution found using A*!")
     else:
         path_3: List[MazeLocation] = node_to_path(solution_3)
         laberinto.mark(path_3)
+        print('La solución A* tiene estados_recorridos:', estados_recorridos)
+        print('La solución consta de pasos:', len(path_3))
         print(laberinto)
         laberinto.clear(path_3)
 
