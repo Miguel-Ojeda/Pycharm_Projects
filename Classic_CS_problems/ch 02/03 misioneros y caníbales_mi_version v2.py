@@ -140,7 +140,8 @@ def display_path_debug(path: List[MCState]) -> None:
 if __name__ == '__main__':
 
     juego = MCState(mis_iz=3, can_iz=3, mis_der=0, can_der=0, barco_iz=True, capacidad_barco=2)
-    solucion_1: Optional[Node[MCState]] = bfs(juego, MCState.goal_test, MCState.successors)
+    solucion_1: Optional[Node[MCState]]
+    num_estados, solucion_1 = bfs(juego, MCState.goal_test, MCState.successors)
     if solucion_1 is None:
         print('No tiene solución DFS el problema de misioneros y caníbales')
     else:
@@ -148,7 +149,8 @@ if __name__ == '__main__':
         path_1 = node_to_path(solucion_1)
         display_path_debug(path_1)
 
-    solucion_2: Optional[Node[MCState]] = bfs(juego, MCState.goal_test, MCState.successors)
+    solucion_2: Optional[Node[MCState]]
+    num_estados, solucion_2 = bfs(juego, MCState.goal_test, MCState.successors)
     if solucion_2 is None:
         print('No tiene solución BFS el problema de misioneros y caníbales')
     else:
@@ -156,7 +158,8 @@ if __name__ == '__main__':
         path_2 = node_to_path(solucion_2)
         display_path_debug(path_2)
 
-    solucion_3: Optional[Node[MCState]] = astar(juego, MCState.goal_test, MCState.successors, MCState.restante)
+    solucion_3: Optional[Node[MCState]]
+    num_estados, solucion_3 = astar(juego, MCState.goal_test, MCState.successors, MCState.restante)
     if solucion_3 is None:
         print('No tiene solución A* el problema de misioneros y caníbales')
     else:
