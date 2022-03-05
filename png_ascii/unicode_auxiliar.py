@@ -39,23 +39,22 @@ def display_unicode(rango: RangoUnicode) -> None:
     for i in range(0, len(caracteres), ANCHO):
         print(caracteres[i: i+ANCHO])
 
-
-display_unicode(unicode_bloques)
-display_unicode(unicode_geometric_shapes)
-display_unicode(unicode_miscellaneous_symbols)
-display_unicode(unicode_dingbats)
-display_unicode(unicode_braille)
-display_unicode(unicode_symbols_for_legacy_computing)
-display_unicode(unicode_geometric_shapes_extended)
-display_unicode(unicode_yijing_hexagram_symbols)
-display_unicode(unicode_cuneiforme)
-display_unicode(unicode_egipcio)
-display_unicode(unicode_suplemento_bamum)
-display_unicode(unicode_mayan_numerals)
-display_unicode(unicode_Tai_Xuan_Jing_Symbols)
-display_unicode(unicode_misc_sym_and_pic)
-display_unicode(unicode_emoticons)
-
+if __name__ == '__main__':
+    display_unicode(unicode_bloques)
+    display_unicode(unicode_geometric_shapes)
+    display_unicode(unicode_miscellaneous_symbols)
+    display_unicode(unicode_dingbats)
+    display_unicode(unicode_braille)
+    display_unicode(unicode_symbols_for_legacy_computing)
+    display_unicode(unicode_geometric_shapes_extended)
+    display_unicode(unicode_yijing_hexagram_symbols)
+    display_unicode(unicode_cuneiforme)
+    display_unicode(unicode_egipcio)
+    display_unicode(unicode_suplemento_bamum)
+    display_unicode(unicode_mayan_numerals)
+    display_unicode(unicode_Tai_Xuan_Jing_Symbols)
+    display_unicode(unicode_misc_sym_and_pic)
+    display_unicode(unicode_emoticons)
 
 
 
