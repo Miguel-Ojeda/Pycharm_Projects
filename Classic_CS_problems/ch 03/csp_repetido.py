@@ -51,6 +51,17 @@ class CSP(Generic[V, D]):
             return assignment
         # Si llegamos hasta aquí, es que queda alguna por asignar...
         unassigned: List[V] = [var for var in self.variables if var not in assignment]
+        '''
+        if unassigned == []:
+            print('asignadas y totales', len(assignment), len(self.variables))
+            print('variables en self.var')
+            for index, var in enumerate(self.variables, 1):
+                print(var)
+            print('variables asignadas')
+            for index, var in enumerate(assignment, 1):
+                print(var)
+            print('Uffff')
+        '''
         first_un: V = unassigned[0]
         # Ahora a ver que valor asignamos de su dominio..
         for value in self.domains[first_un]:
