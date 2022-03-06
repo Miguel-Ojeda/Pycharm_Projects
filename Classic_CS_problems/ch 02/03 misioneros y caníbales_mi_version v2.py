@@ -140,6 +140,7 @@ def display_path_debug(path: List[MCState]) -> None:
 if __name__ == '__main__':
 
     juego = MCState(mis_iz=3, can_iz=3, mis_der=0, can_der=0, barco_iz=True, capacidad_barco=2)
+
     solucion_1: Optional[Node[MCState]] = bfs(juego, MCState.goal_test, MCState.successors)
     if solucion_1 is None:
         print('No tiene solución DFS el problema de misioneros y caníbales')
