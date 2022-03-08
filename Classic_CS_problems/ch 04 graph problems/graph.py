@@ -1,5 +1,9 @@
 from typing import TypeVar, Generic, List, Optional
 from edge import Edge
+import sys
+sys.path.insert(0, '..')
+from ch_02_search_problems.generic_search import bfs, Node, node_to_path
+
 
 V = TypeVar('V')
 
@@ -12,7 +16,7 @@ class Graph(Generic[V]):
     """
     def __init__(self, vertices: Optional[List[V]] = None) -> None:
         if vertices is None:
-            self._vertices = []
+            vertices = []
         self._vertices = vertices
         # Guardamos una lista, donde cada ítem es la lista de aristas de cada vértice
         # Así, el primer elemento va a ser la lista de aristas del primer vértice, etc.
@@ -98,6 +102,7 @@ class Graph(Generic[V]):
         return desc
 
 
+
 if __name__ == "__main__":
     # test basic Graph construction
     city_graph: Graph[str] = Graph(["Seattle", "San Francisco", "Los Angeles", "Riverside",
@@ -131,3 +136,21 @@ if __name__ == "__main__":
     city_graph.add_edge_by_vertices("New York", "Philadelphia")
     city_graph.add_edge_by_vertices("Philadelphia", "Washington")
     print(city_graph)
+
+    #
+    '''
+    Encontrar el camino más corto entre 'Boston' y 'Miami' utilizando el algoritmo BFS
+    Estado inicial (inicio) Boston
+    Función de éxito: estar en Miami
+    Función succesors.... obtener los vecinos de donde estamos!!!
+    '''
+    solucion: Optional[Node[V]]
+    _, solucion = bfs('Boston', lambda x: x=='Miami', city_graph.neighbors_for_vertex)
+    if solucion is None:
+        print("No solution found using breadth-first search!")
+    else:
+        path: List[V] = node_to_path(solucion)
+        print('El path más corto (en tramos) de Boston a Miami es el siguiente:')
+        print(path)
+
+
