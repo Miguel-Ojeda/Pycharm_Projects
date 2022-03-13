@@ -1,15 +1,16 @@
 """
-No me sirvió con generics... pq por ejemplo, si creo un array de str, sólo tienen un carácter
-por eso pasé de generics y utilizo simplemente arrays de dtype= object
-No sirve nada de esto!!
+Lo mismo, pero se utiliza el redimensionamiento para optimizar, ya que,
+a veces no sabemos realmente el tamaño que nos hace falta, y tampoco es óptimo
+reservar un tamaño grandísimo si no se va a utilizar...
 """
 import numpy as np
+from typing import Optional
 
-
-class FixedCapacityStack:
-    def __init__(self, capacity: int):
-        self._data = np.zeros(shape=capacity, dtype=object)
-        self._capacity: int = capacity
+class ResizingStack:
+    def __init__(self):
+        # Inicialmente creamos un array sólo con capacidad para un ítem
+        # Aunque podríamos empezar con tamaño 5 quizás mejor, por ejemplo...
+        self._data = np.zeros(1, dtype=object)
         self._ocupados: int = 0
         # Nos lleva el número de ocupados
         # Este índice nos indica donde deberemos añadir los nuevos...
@@ -20,28 +21,40 @@ class FixedCapacityStack:
         return self._ocupados == 0
 
     @property
-    def size(self):
-        return self._ocupados
+    def capacity(self):
+        return self._data.size
 
     @property
     def full(self):
-        return self._ocupados == self._capacity
+        return self._ocupados == self.capacity
+
+    @property
+    def size(self):
+        return self._ocupados
 
     def push(self, item: object) -> None:
         if self.full:
-            print('Stack está lleno, lo siento')
-            return
+            self.resize(2 * self.capacity)
         self._data[self._ocupados] = item
         self._ocupados += 1
 
-    def pop(self) -> object:
+    def pop(self) -> Optional[object]:
         if self.empty:
             return
         self._ocupados -= 1
-        return self._data[self._ocupados]
+        item = self._data[self._ocupados]
+        if self._ocupados > 0 and self._ocupados == self.capacity // 4:
+            self.resize(self.capacity // 2)
+        return item
+
+    def resize(self, nueva_capacidad: int) -> None:
+        temporal = np.empty(shape=nueva_capacidad, dtype=object)
+        for i in range(self._ocupados):
+            temporal[i] = self._data[i]
+        self._data = temporal
 
     def __repr__(self):
-        cadena = f'La pila tiene ocupados {self.size} de {self._capacity} elementos\n'
+        cadena = f'La pila tiene ocupados {self.size} de {self.capacity} elementos\n'
         cadena += '\n'.join(self._data[i] for i in reversed(range(self._ocupados)))
         return cadena
 
@@ -71,7 +84,7 @@ if __name__ == '__main__':
     print(cadenas)
     '''
     # PRUEBA 2
-    stack: FixedCapacityStack = FixedCapacityStack(10)
+    stack: ResizingStack = ResizingStack()
     cadena = 'to be or not to - be - - that - - - is'
     cadena = cadena.split()
     print(cadena)

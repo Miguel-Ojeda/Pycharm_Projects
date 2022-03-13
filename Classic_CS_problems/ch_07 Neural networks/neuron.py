@@ -2,7 +2,7 @@ from typing import List, Callable
 from util import dot_product
 
 class Neuron:
-    def _init__(self, weights: List[float], learning_rate: float, activation_function: Callable[[float], float],
+    def __init__(self, weights: List[float], learning_rate: float, activation_function: Callable[[float], float],
                 derivative_activation_function: Callable[[float], float]) -> None:
         self.weights = weights
         self.activation_function = activation_function
