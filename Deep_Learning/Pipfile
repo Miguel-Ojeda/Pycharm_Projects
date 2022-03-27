@@ -10,6 +10,7 @@ jupyter = "*"
 jupyterlab = "*"
 tensorflow = "*"
 matplotlib = "*"
+scipy = "*"
 
 [dev-packages]
 
